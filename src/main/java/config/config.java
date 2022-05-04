@@ -7,29 +7,6 @@ import java.util.Map;
 import lombok.Data;
 
 @Data
-@AllArgsConstructor
-class metadata{
-    public boolean isMaster;
-    public int uid;
-}
-
-@Data
-@AllArgsConstructor
-class cluster{
-    public String mainTable;
-    public int maxTables;
-    public int neighbor;
-}
-
-@Data
-@AllArgsConstructor
-class network{
-    public int timeOut;
-    public String ip;
-    public int port;
-}
-
-@Data
 public class config {
     public String appVersion;
     public metadata metadata;
@@ -47,7 +24,7 @@ public class config {
         Map<String, Object> network = (Map<String, Object>) obj.get("network");
 
         this.appVersion = (String) obj.get("appVersion");
-        this.metadata = new metadata((boolean)metadata.get("isMaster"), (int)metadata.get("uid"));
+        this.metadata = new metadata((boolean)metadata.get("isMaster"), (int)metadata.get("uid"), (String)metadata.get("name"));
         this.cluster = new cluster((String)cluster.get("mainTable"), (int)cluster.get("maxTables"), (int)cluster.get("neighbor"));
         this.network = new network((int)network.get("timeOut"), (String)network.get("ip"), (int)network.get("port"));
     }
