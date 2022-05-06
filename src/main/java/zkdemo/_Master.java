@@ -61,8 +61,7 @@ public class _Master implements Watcher, Runnable {
      */
     public void connectToZK()
             throws IOException, InterruptedException, KeeperException {
-        String connectString = _C.network.ip + ':' + _C.network.port;
-        zk = new ZooKeeper(connectString, _C.network.timeOut, (event) -> {
+        zk = new ZooKeeper(_C.network.ip + ':' + _C.network.port, _C.network.timeOut, (event) -> {
             System.out.println("Default watcher: " + event);
         });
         // Register master
