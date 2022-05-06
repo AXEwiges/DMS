@@ -97,5 +97,5 @@ public class master implements Watcher, Runnable {
         master master = new master();
         master.connectToZK();
         master.run();
-    } 
+    }
 }
