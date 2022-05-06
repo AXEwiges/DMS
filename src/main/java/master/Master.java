@@ -4,6 +4,9 @@ import static org.apache.zookeeper.ZooDefs.Ids.OPEN_ACL_UNSAFE;
 
 import java.io.IOException;
 import java.util.List;
+
+import master.rpc.regionInfo;
+import org.apache.thrift.TException;
 import org.apache.zookeeper.AsyncCallback.ChildrenCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -14,13 +17,26 @@ import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper;
 import config.config;
+import master.rpc.Master.Iface;
 
-public class master implements Watcher, Runnable {
+class MasterServerImpl implements Iface {
+    @Override
+    public regionInfo getRegionsOfTable(String tableName, boolean isCreate, boolean isDrop) throws TException {
+        return null;
+    }
+
+    @Override
+    public void finishCopyTable(String tableName, int uid) throws TException {
+
+    }
+}
+
+public class Master implements Watcher, Runnable {
 
     private ZooKeeper zk;
     public config _C;
 
-    public master() {
+    public Master() {
         this._C = new config();
         _C.loadYaml();
     }
@@ -94,7 +110,7 @@ public class master implements Watcher, Runnable {
 
     public static void main(String[] args)
             throws IOException, InterruptedException, KeeperException {
-        master master = new master();
+        Master master = new Master();
         master.connectToZK();
         master.run();
     }
