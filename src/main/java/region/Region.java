@@ -1,10 +1,6 @@
 package region;
 
-import static org.apache.zookeeper.ZooDefs.Ids.OPEN_ACL_UNSAFE;
-
-import java.io.IOException;
-import java.util.Scanner;
-
+import common.meta.table;
 import config.config;
 import org.apache.thrift.TException;
 import org.apache.zookeeper.CreateMode;
@@ -13,14 +9,21 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import region.db.Interpreter;
 import region.rpc.Region.Iface;
-import region.db.Interpreter.*;
 import region.rpc.execResult;
-import region.tools.DMS_STDOUT;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+import static org.apache.zookeeper.ZooDefs.Ids.OPEN_ACL_UNSAFE;
 
 public class Region implements Runnable {
 
     private ZooKeeper zk;
     public config _C;
+
+    public static List<table> tables = new ArrayList<>();
 
     public Region() {
         this._C = new config();
@@ -59,11 +62,21 @@ public class Region implements Runnable {
     public static class RegionImpl implements Iface {
         @Override
         public execResult statementExec(String cmd) throws TException {
-            return Interpreter.runSingleCommand(cmd);
+            execResult res = Interpreter.runSingleCommand(cmd);
+            if(res.type == 2) {
+                tables.add(new table(res.result.split(" ")[1]));
+            }
+            if(res.type == 3) {
+                tables.remove(new table(res.result.split(" ")[1]));
+            }
+            return res;
         }
 
         @Override
         public boolean requestCopyTable(String destination, String tableName, boolean isMove) throws TException {
+            String destinationIP = destination.split(":")[0];
+            String destinationPort = destination.split(":")[1];
+
             return false;
         }
 

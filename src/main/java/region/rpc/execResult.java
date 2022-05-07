@@ -13,17 +13,20 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
 
   private static final org.apache.thrift.protocol.TField STATUS_FIELD_DESC = new org.apache.thrift.protocol.TField("status", org.apache.thrift.protocol.TType.I32, (short)1);
   private static final org.apache.thrift.protocol.TField RESULT_FIELD_DESC = new org.apache.thrift.protocol.TField("result", org.apache.thrift.protocol.TType.STRING, (short)2);
+  private static final org.apache.thrift.protocol.TField TYPE_FIELD_DESC = new org.apache.thrift.protocol.TField("type", org.apache.thrift.protocol.TType.I32, (short)3);
 
   private static final org.apache.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new execResultStandardSchemeFactory();
   private static final org.apache.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new execResultTupleSchemeFactory();
 
   public int status; // required
   public @org.apache.thrift.annotation.Nullable java.lang.String result; // required
+  public int type; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     STATUS((short)1, "status"),
-    RESULT((short)2, "result");
+    RESULT((short)2, "result"),
+    TYPE((short)3, "type");
 
     private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
 
@@ -43,6 +46,8 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
           return STATUS;
         case 2: // RESULT
           return RESULT;
+        case 3: // TYPE
+          return TYPE;
         default:
           return null;
       }
@@ -85,6 +90,7 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
 
   // isset id assignments
   private static final int __STATUS_ISSET_ID = 0;
+  private static final int __TYPE_ISSET_ID = 1;
   private byte __isset_bitfield = 0;
   public static final java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
@@ -93,6 +99,8 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.RESULT, new org.apache.thrift.meta_data.FieldMetaData("result", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+    tmpMap.put(_Fields.TYPE, new org.apache.thrift.meta_data.FieldMetaData("type", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(execResult.class, metaDataMap);
   }
@@ -102,12 +110,15 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
 
   public execResult(
     int status,
-    java.lang.String result)
+    java.lang.String result,
+    int type)
   {
     this();
     this.status = status;
     setStatusIsSet(true);
     this.result = result;
+    this.type = type;
+    setTypeIsSet(true);
   }
 
   /**
@@ -119,6 +130,7 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
     if (other.isSetResult()) {
       this.result = other.result;
     }
+    this.type = other.type;
   }
 
   public execResult deepCopy() {
@@ -130,6 +142,8 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
     setStatusIsSet(false);
     this.status = 0;
     this.result = null;
+    setTypeIsSet(false);
+    this.type = 0;
   }
 
   public int getStatus() {
@@ -180,6 +194,29 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
     }
   }
 
+  public int getType() {
+    return this.type;
+  }
+
+  public execResult setType(int type) {
+    this.type = type;
+    setTypeIsSet(true);
+    return this;
+  }
+
+  public void unsetType() {
+    __isset_bitfield = org.apache.thrift.EncodingUtils.clearBit(__isset_bitfield, __TYPE_ISSET_ID);
+  }
+
+  /** Returns true if field type is set (has been assigned a value) and false otherwise */
+  public boolean isSetType() {
+    return org.apache.thrift.EncodingUtils.testBit(__isset_bitfield, __TYPE_ISSET_ID);
+  }
+
+  public void setTypeIsSet(boolean value) {
+    __isset_bitfield = org.apache.thrift.EncodingUtils.setBit(__isset_bitfield, __TYPE_ISSET_ID, value);
+  }
+
   public void setFieldValue(_Fields field, @org.apache.thrift.annotation.Nullable java.lang.Object value) {
     switch (field) {
     case STATUS:
@@ -198,6 +235,14 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
       }
       break;
 
+    case TYPE:
+      if (value == null) {
+        unsetType();
+      } else {
+        setType((java.lang.Integer)value);
+      }
+      break;
+
     }
   }
 
@@ -209,6 +254,9 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
 
     case RESULT:
       return getResult();
+
+    case TYPE:
+      return getType();
 
     }
     throw new java.lang.IllegalStateException();
@@ -225,6 +273,8 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
       return isSetStatus();
     case RESULT:
       return isSetResult();
+    case TYPE:
+      return isSetType();
     }
     throw new java.lang.IllegalStateException();
   }
@@ -260,6 +310,15 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
         return false;
     }
 
+    boolean this_present_type = true;
+    boolean that_present_type = true;
+    if (this_present_type || that_present_type) {
+      if (!(this_present_type && that_present_type))
+        return false;
+      if (this.type != that.type)
+        return false;
+    }
+
     return true;
   }
 
@@ -272,6 +331,8 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
     hashCode = hashCode * 8191 + ((isSetResult()) ? 131071 : 524287);
     if (isSetResult())
       hashCode = hashCode * 8191 + result.hashCode();
+
+    hashCode = hashCode * 8191 + type;
 
     return hashCode;
   }
@@ -300,6 +361,16 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
     }
     if (isSetResult()) {
       lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.result, other.result);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = java.lang.Boolean.compare(isSetType(), other.isSetType());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (isSetType()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.type, other.type);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -335,6 +406,10 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
     } else {
       sb.append(this.result);
     }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("type:");
+    sb.append(this.type);
     first = false;
     sb.append(")");
     return sb.toString();
@@ -397,6 +472,14 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 3: // TYPE
+            if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
+              struct.type = iprot.readI32();
+              struct.setTypeIsSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -420,6 +503,9 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
         oprot.writeString(struct.result);
         oprot.writeFieldEnd();
       }
+      oprot.writeFieldBegin(TYPE_FIELD_DESC);
+      oprot.writeI32(struct.type);
+      oprot.writeFieldEnd();
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
@@ -444,19 +530,25 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
       if (struct.isSetResult()) {
         optionals.set(1);
       }
-      oprot.writeBitSet(optionals, 2);
+      if (struct.isSetType()) {
+        optionals.set(2);
+      }
+      oprot.writeBitSet(optionals, 3);
       if (struct.isSetStatus()) {
         oprot.writeI32(struct.status);
       }
       if (struct.isSetResult()) {
         oprot.writeString(struct.result);
       }
+      if (struct.isSetType()) {
+        oprot.writeI32(struct.type);
+      }
     }
 
     @Override
     public void read(org.apache.thrift.protocol.TProtocol prot, execResult struct) throws org.apache.thrift.TException {
       org.apache.thrift.protocol.TTupleProtocol iprot = (org.apache.thrift.protocol.TTupleProtocol) prot;
-      java.util.BitSet incoming = iprot.readBitSet(2);
+      java.util.BitSet incoming = iprot.readBitSet(3);
       if (incoming.get(0)) {
         struct.status = iprot.readI32();
         struct.setStatusIsSet(true);
@@ -464,6 +556,10 @@ public class execResult implements org.apache.thrift.TBase<execResult, execResul
       if (incoming.get(1)) {
         struct.result = iprot.readString();
         struct.setResultIsSet(true);
+      }
+      if (incoming.get(2)) {
+        struct.type = iprot.readI32();
+        struct.setTypeIsSet(true);
       }
     }
   }

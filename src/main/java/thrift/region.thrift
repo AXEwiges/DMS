@@ -1,9 +1,10 @@
 namespace java region.rpc
 
-/*用于储存语句执行结果*/
+/*用于储存语句执行结果   0 错误 1 正常 2 建表，需加入队列 3 删除表，需要移出队列*/
 struct execResult {
     1:i32 status,
-    2:string result
+    2:string result,
+    3:i32 type
 }
 
 service Region {
