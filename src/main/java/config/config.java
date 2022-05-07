@@ -28,4 +28,10 @@ public class config {
         this.cluster = new cluster((String)cluster.get("mainTable"), (int)cluster.get("maxTables"), (int)cluster.get("neighbor"));
         this.network = new network((int)network.get("timeOut"), (String)network.get("ip"), (int)network.get("port"));
     }
+
+    public static void main(String[] args) {
+        config a = new config();
+        a.loadYaml();
+        System.out.println(a);
+    }
 }
