@@ -1,15 +1,12 @@
 package config;
 
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import org.yaml.snakeyaml.Yaml;
 import java.io.InputStream;
 import java.util.Map;
 import lombok.Data;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class config {
     public String appVersion;
     public metadata metadata;
