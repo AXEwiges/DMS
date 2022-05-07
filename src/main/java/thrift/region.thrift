@@ -1,4 +1,4 @@
-namespace java region
+namespace java region.rpc
 
 /*用于储存语句执行结果*/
 struct execResult {

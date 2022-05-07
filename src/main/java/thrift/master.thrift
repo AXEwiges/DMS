@@ -1,4 +1,4 @@
-namespace java master
+namespace java master.rpc
 
 /*用于储存单个表的信息*/
 struct cacheTable {
@@ -14,7 +14,7 @@ struct regionInfo {
 
 service Master {
     /*获取表名，参数分别为: 表的名称，是否建表，是否删表*/
-    regionInfo getRegionsOfTable(1:string tableName, 2:bool isCreate, 3:bool isDrop),
+    list<regionInfo> getRegionsOfTable(1:string tableName, 2:bool isCreate, 3:bool isDrop),
     /*存储均衡回调函数，参数分别为: 表的名称，将要加入的新服务器*/
     void finishCopyTable(1:string tableName, 2:i32 uid)
 }

@@ -3,7 +3,7 @@ package master;
 import static org.apache.zookeeper.ZooDefs.Ids.OPEN_ACL_UNSAFE;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.*;
 
 import master.rpc.regionInfo;
 import org.apache.thrift.TException;
@@ -18,18 +18,6 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper;
 import config.config;
 import master.rpc.Master.Iface;
-
-class MasterServerImpl implements Iface {
-    @Override
-    public regionInfo getRegionsOfTable(String tableName, boolean isCreate, boolean isDrop) throws TException {
-        return null;
-    }
-
-    @Override
-    public void finishCopyTable(String tableName, int uid) throws TException {
-
-    }
-}
 
 public class Master implements Watcher, Runnable {
 
@@ -106,6 +94,64 @@ public class Master implements Watcher, Runnable {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    HashMap<String, List<Integer>> tablesToRegions = new HashMap<>();//存储每张表存放在哪些region上
+    HashMap<Integer, Integer> numsOfRegionTables = new HashMap<>();//存储每个region已经存放表的数量
+    HashMap<Integer, regionInfo> regionsInfomation = new HashMap<>();//存储每个region的信息，key是region的uid
+
+    /**
+     * 实现Master接口方法
+     */
+    class MasterImpl implements Iface {
+        @Override
+        public List<regionInfo> getRegionsOfTable(String tableName, boolean isCreate, boolean isDrop) throws TException {
+            List<Integer> regions;
+            if(isCreate) {
+                regions = findNMinRegion(3);
+            }
+            else {
+                regions = tablesToRegions.get(tableName);
+                if(isDrop) {
+                    tablesToRegions.remove(tableName);
+                    for(Integer i:regions) {
+                        numsOfRegionTables.replace(i, numsOfRegionTables.get(i)-1);
+                    }
+                }
+            }
+            List<regionInfo> regionsINFO = new ArrayList<>();
+            for(Integer i:regions) {
+                regionsINFO.add(regionsInfomation.get(i));
+            }
+            return regionsINFO;
+        }
+
+        @Override
+        public void finishCopyTable(String tableName, int uid) throws TException {
+            tablesToRegions.get(tableName).add(uid);
+        }
+    }
+
+    /**
+     * 该函数用于实现负载均衡，通过每个region存储的表的数量来进行
+     * @param N 表示要返回的region个数
+     * @return  返回N个region
+     */
+    public List<Integer> findNMinRegion(int N) {
+        List<Map.Entry<Integer, Integer>> list = new ArrayList<Map.Entry<Integer, Integer>>(numsOfRegionTables.entrySet());
+        Collections.sort(list, new Comparator<Map.Entry<Integer, Integer>>() {
+            public int compare(Map.Entry<Integer, Integer> o1, Map.Entry<Integer, Integer> o2) {
+                return (o1.getValue() - o2.getValue());
+            }
+        });
+
+        List<Integer> NMinRegion = new ArrayList<>();
+
+        for(int i = 0; i < N; i++) {
+            Map.Entry<Integer, Integer> t = list.get(i);
+            NMinRegion.add(t.getKey());
+        }
+        return NMinRegion;
     }
 
     public static void main(String[] args)
