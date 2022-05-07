@@ -11,8 +11,11 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
+import region.db.Interpreter;
 import region.rpc.Region.Iface;
-import region.db.API.*;
+import region.db.Interpreter.*;
+import region.rpc.execResult;
+import region.tools.DMS_STDOUT;
 
 public class Region implements Runnable {
 
@@ -53,11 +56,10 @@ public class Region implements Runnable {
         }
     }
 
-    public class RegionImpl implements Iface {
+    public static class RegionImpl implements Iface {
         @Override
-        public boolean statementExec(String cmd) throws TException {
-
-            return false;
+        public execResult statementExec(String cmd) throws TException {
+            return Interpreter.runSingleCommand(cmd);
         }
 
         @Override
