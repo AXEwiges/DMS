@@ -12,6 +12,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import region.rpc.Region.Iface;
+import region.db.API.*;
 
 public class Region implements Runnable {
 
@@ -55,6 +56,7 @@ public class Region implements Runnable {
     public class RegionImpl implements Iface {
         @Override
         public boolean statementExec(String cmd) throws TException {
+
             return false;
         }
 
