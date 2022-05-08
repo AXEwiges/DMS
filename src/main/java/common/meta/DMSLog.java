@@ -8,6 +8,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,8 +19,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * */
 @Data
 class logLoad implements Serializable {
-    @Serial
-    private static final long serialVersionUID = 7510582097494459L;
     public List<String> Log;
     public String tableName;
     public Integer checkPoint;
@@ -78,6 +77,10 @@ public class DMSLog {
      * @param statement 语句
      * */
     public void add(String tableName, String statement){
+        if(!mainLog.containsKey(tableName)){
+            mainLog.put(tableName, new ArrayList<>());
+            checkPoints.put(tableName, 0);
+        }
         mainLog.get(tableName).add(statement);
         Integer integer = checkPoints.get(tableName) + 1;
         checkPoints.put(tableName, integer);
@@ -128,20 +131,9 @@ public class DMSLog {
                 Socket recv = null;
                 try{
                     recv = server.accept();
-                    ObjectInputStream recvInputStream = new ObjectInputStream(recv.getInputStream());
-                    if(recvInputStream.readObject() != null){
-                        System.out.println(recvInputStream.readObject().toString());
-                    }
-                    if(recvInputStream.readObject() instanceof logLoad log){
-                        mainLog.put(log.tableName, log.Log);
-                        checkPoints.put(log.tableName, log.checkPoint);
-                        System.out.println("Received Successfully");
-                        for(Map.Entry<String, List<String>> m : mainLog.entrySet()){
-                            for(String s : m.getValue()){
-                                System.out.println(s);
-                            }
-                        }
-                    }
+                    System.out.println("connected from " + recv.getRemoteSocketAddress());
+                    Thread t = new syncDB(recv);
+                    t.start();
                 } catch (Exception ignored) {
                     try {
                         if(recv != null)
@@ -151,6 +143,47 @@ public class DMSLog {
                     }
                 }
             }
+        }
+    }
+
+    class syncDB extends Thread {
+        public Socket socket;
+        public syncDB(Socket s){
+            socket = s;
+        }
+        @Override
+        public void run() {
+            System.out.println("SUB PRO START");
+            try{
+                System.out.println(socket.getInputStream().toString());
+                ObjectInputStream recvInputStream = new ObjectInputStream(socket.getInputStream());
+                System.out.println("OK: "+recvInputStream.readObject().toString());
+//                if(recvInputStream.readObject() == null){
+//                    System.out.println("OK OK "+recvInputStream.readObject().toString());
+//                }
+                if(recvInputStream.readObject() instanceof logLoad log){
+                    System.out.println("1212121212121");
+                }
+                try{
+                    logLoad log = (logLoad)recvInputStream.readObject();
+                    System.out.println("log:" + log);
+                    mainLog.put(log.tableName, log.Log);
+                    checkPoints.put(log.tableName, log.checkPoint);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                System.out.println("Received Successfully");
+                for(Map.Entry<String, List<String>> m : mainLog.entrySet()){
+                    for(String s : m.getValue()){
+                        System.out.println(s);
+                    }
+                }
+//                }
+            } catch(Exception e){
+                e.printStackTrace();
+            }
+
         }
     }
 

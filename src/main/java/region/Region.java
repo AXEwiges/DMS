@@ -124,8 +124,7 @@ public class Region implements Runnable {
         Scanner scanner = new Scanner(System.in);
         String name = scanner.nextLine();
         Region rs = new Region();
-        rs.regionLog.mainLog.put("DMS", new ArrayList<>());
-        rs.regionLog.mainLog.get("DMS").add("insert 2");
+        rs.regionLog.add("DMS", "insert 3");
         System.out.println("Put");
 //        rs.connectToZK();
         rs.run();
