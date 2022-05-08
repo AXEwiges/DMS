@@ -13,6 +13,7 @@ import java.util.List;
  * */
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 class logLoad {
     public static List<String> Log;
     public static String tableName;
@@ -31,6 +32,7 @@ class logLoad {
  * */
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class DMSLog {
     /**
     * 主要Log，存储全部的语句日志，key为表名，value为日志列表
