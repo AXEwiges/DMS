@@ -45,10 +45,21 @@ public class ClientRegionServerImpl implements Client {
     ClientInfo masterClient = ClientInfo.from(new String(r));
 
     // Create node with unique name
-    uuid = UUID.randomUUID();
-    String path = "/region_servers/" + uuid;
-    zk.create("/region_servers/" + uuid, clientInfo.toString().getBytes(),
-        OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+    int uid = UUID.randomUUID().hashCode();
+    while (true) {
+      try {
+        zk.create("/region_servers/" + uid, clientInfo.toString().getBytes(),
+            OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+      } catch (KeeperException e) {
+        if (e.code() == Code.NODEEXISTS) {
+          // Duplicated uid, try again
+          uid = UUID.randomUUID().hashCode();
+          continue;
+        }
+        throw e;
+      }
+      break;
+    }
 
     connected = true;
     return masterClient;

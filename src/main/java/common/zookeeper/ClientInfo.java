@@ -1,18 +1,26 @@
 package common.zookeeper;
 
-import java.util.Objects;
+import master.rpc.cacheTable;
 
 /**
  * 用来向 ZooKeeper 表示 Master 或者 RegionServer 开放 thrift 连接的端口。
  */
-public class ClientInfo {
+public class ClientInfo extends cacheTable {
 
-  private final String host;
-  private final int port;
-
-  public ClientInfo(String host, int port) {
-    this.host = host;
+  public ClientInfo(String ip, int port) {
+    this.ip = ip;
     this.port = port;
+  }
+
+  public ClientInfo(String ip, int port, int uid) {
+    this.ip = ip;
+    this.port = port;
+    this.uid = uid;
+  }
+
+  public ClientInfo setUid(int uid) {
+    this.uid = uid;
+    return this;
   }
 
   /**
@@ -36,17 +44,9 @@ public class ClientInfo {
     return new ClientInfo(arr[0], port);
   }
 
-  public int getPort() {
-    return port;
-  }
-
-  public String getHost() {
-    return host;
-  }
-
   @Override
   public String toString() {
-    return host + ":" + port;
+    return ip + ":" + port;
   }
 
   @Override
@@ -58,11 +58,11 @@ public class ClientInfo {
       return false;
     }
     ClientInfo that = (ClientInfo) o;
-    return port == that.port && host.equals(that.host);
+    return port == that.port && ip.equals(that.ip);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(host, port);
+    return uid;
   }
 }

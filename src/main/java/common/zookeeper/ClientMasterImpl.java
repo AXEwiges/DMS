@@ -29,7 +29,8 @@ public class ClientMasterImpl implements Client {
   }
 
   @Override
-  public ClientInfo connect(String zkHostPort, ClientInfo client, int sessionTimeout)
+  public ClientInfo connect(String zkHostPort, ClientInfo client,
+      int sessionTimeout)
       throws IOException, InterruptedException, KeeperException {
     if (connected) {
       throw new IllegalStateException("Do not connect twice.");
@@ -57,12 +58,12 @@ public class ClientMasterImpl implements Client {
 
   /**
    * 处理子节点的连接和断连事件。
-   *
+   * <p>
    * 实现细节：
-   *
-   * 在 ZooKeeper 服务器中，每个 region server 是 /region_servers 节点下的子节点。
-   * 节点名称是连接到 ZooKeeper 中随机生成的，不会重复；节点内容是 region server 的地址 + 端口
-   * （如 {@code 192.168.1.1:5000}）。
+   * <p>
+   * 在 ZooKeeper 服务器中，每个 region server 是 /region_servers 节点下的子节点。 节点名称是连接到
+   * ZooKeeper 中随机生成的，不会重复；节点内容是 region server 的地址 + 端口 （如 {@code
+   * 192.168.1.1:5000}）。
    */
   private class EventCallback implements Watcher, ChildrenCallback {
 
@@ -120,7 +121,8 @@ public class ClientMasterImpl implements Client {
               continue;
             }
 
-            ClientInfo cl = ClientInfo.from(new String(r));
+            ClientInfo cl = ClientInfo.from(new String(r))
+                .setUid(Integer.parseInt(newClient));
             clients.put(newClient, cl);
 
             // and execute the callback
@@ -133,6 +135,7 @@ public class ClientMasterImpl implements Client {
 
   /**
    * For testing.
+   *
    * @param args
    */
   public static void main(String[] args)
@@ -140,12 +143,13 @@ public class ClientMasterImpl implements Client {
     Client masterClient = new ClientMasterImpl(new ClientConnectionStrategy() {
       @Override
       public void onConnect(ClientInfo clientInfo) {
-        System.out.println(clientInfo + " connected");
+        System.out.println(clientInfo + " connected, uid = " + clientInfo.uid);
       }
 
       @Override
       public void onDisconnect(ClientInfo clientInfo) {
-        System.out.println(clientInfo + " disconnected");
+        System.out.println(
+            clientInfo + " disconnected, uid = " + clientInfo.uid);
       }
     });
 
