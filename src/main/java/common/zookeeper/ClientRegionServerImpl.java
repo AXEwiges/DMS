@@ -24,7 +24,7 @@ public class ClientRegionServerImpl implements Client {
       throw new IllegalStateException("Do not connect twice.");
     }
 
-    // Connected to zookeeper
+    // Connect to zookeeper
     zk = new ZooKeeper(zkHostPort, sessionTimeout, null);
     // Make sure /region_servers node exists
     if (zk.exists("/region_servers", false) == null) {
