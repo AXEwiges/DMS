@@ -11,11 +11,14 @@ import org.apache.zookeeper.data.Stat;
 import region.db.Interpreter;
 import region.rpc.Region.Iface;
 import region.rpc.execResult;
+import master.rpc.cacheTable;
+import com.alibaba.fastjson.JSON;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+
 
 import static org.apache.zookeeper.ZooDefs.Ids.OPEN_ACL_UNSAFE;
 
@@ -29,6 +32,10 @@ public class Region implements Runnable {
      * */
     public config _C;
     /**
+     * 存储在zookeeper上的region信息
+     */
+    public cacheTable regionI;
+    /**
      * 用于储存全部的表名
      * */
     public static List<table> tables = new ArrayList<>();
@@ -40,6 +47,7 @@ public class Region implements Runnable {
     public Region() {
         this._C = new config();
         _C.loadYaml();
+        regionI = new cacheTable(_C.network.ip, _C.network.port, _C.metadata.uid);
     }
 
     /**
@@ -55,7 +63,7 @@ public class Region implements Runnable {
         if (stat == null) {
             zk.create("/region_servers", null, OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         }
-        zk.create("/region_servers/" + _C.metadata.name, _C.metadata.name.getBytes(), OPEN_ACL_UNSAFE,
+        zk.create("/region_servers/" + _C.metadata.uid, JSON.toJSONString(regionI).getBytes(), OPEN_ACL_UNSAFE,
                 CreateMode.EPHEMERAL);
         // Read master
         // TODO
@@ -98,10 +106,9 @@ public class Region implements Runnable {
 
     public static void main(String[] args)
             throws InterruptedException, IOException, KeeperException {
-        String name;
         System.out.println("Input the name of the region server: ");
         Scanner scanner = new Scanner(System.in);
-        name = scanner.nextLine();
+        String name = scanner.nextLine();
         Region rs = new Region();
         rs.connectToZK();
         rs.run();

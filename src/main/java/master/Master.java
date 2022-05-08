@@ -5,7 +5,7 @@ import static org.apache.zookeeper.ZooDefs.Ids.OPEN_ACL_UNSAFE;
 import java.io.IOException;
 import java.util.*;
 
-import master.rpc.regionInfo;
+import master.rpc.cacheTable;
 import org.apache.thrift.TException;
 import org.apache.zookeeper.AsyncCallback.ChildrenCallback;
 import org.apache.zookeeper.CreateMode;
@@ -17,12 +17,17 @@ import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper;
 import config.config;
+import com.alibaba.fastjson.JSON;
 import master.rpc.Master.Iface;
 
 public class Master implements Watcher, Runnable {
 
     private ZooKeeper zk;
     public config _C;
+
+    HashMap<String, List<Integer>> tablesToRegions = new HashMap<>();//存储每张表存放在哪些region上
+    HashMap<Integer, List<String>> regionsToTables = new HashMap<>();//存储每个region已经存放表
+    HashMap<Integer, cacheTable> regionsInfomation = new HashMap<>();//存储每个region的信息，key是region的uid
 
     public Master() {
         this._C = new config();
@@ -55,6 +60,40 @@ public class Master implements Watcher, Runnable {
                                   List<String> children) {
             if (Code.get(rc) == Code.OK) {
                 System.out.println("In " + path + ": " + children);
+                /**
+                 * 对region新增和断开连接进行处理
+                 */
+                int num1 = children.size();
+                int num2 = regionsInfomation.size();
+                //新增节点
+                if(num1>num2) {
+                    for (String child : children) {
+                        cacheTable cache = JSON.parseObject(child, cacheTable.class);
+                        if(!regionsInfomation.containsKey(cache.uid)) {
+                            regionsInfomation.put(cache.uid, cache);
+                            regionsToTables.put(cache.uid, new ArrayList<>());
+                            //这边考虑负载均衡可以给新来的region分配几个表
+                        }
+                    }
+                }
+                else if(num1<num2) {
+                    Set<Integer> set = regionsInfomation.keySet();
+                    for (String child : children) {
+                        cacheTable cache = JSON.parseObject(child, cacheTable.class);
+                        if(set.contains(cache.uid)) {
+                            set.remove(cache.uid);
+                        }
+                        for(Integer uid:set) {
+                            List<String> list = regionsToTables.get(uid);
+                            for(String name:list) {
+                                //TODO 调用region接口 给region发出复制表指令
+                                tablesToRegions.get(name).remove(uid);
+                            }
+                            regionsToTables.remove(uid);
+                            regionsInfomation.remove(uid);
+                        }
+                    }
+                }
             }
         }
     }
@@ -96,30 +135,32 @@ public class Master implements Watcher, Runnable {
         }
     }
 
-    HashMap<String, List<Integer>> tablesToRegions = new HashMap<>();//存储每张表存放在哪些region上
-    HashMap<Integer, Integer> numsOfRegionTables = new HashMap<>();//存储每个region已经存放表的数量
-    HashMap<Integer, regionInfo> regionsInfomation = new HashMap<>();//存储每个region的信息，key是region的uid
-
     /**
      * 实现Master接口方法
      */
     class MasterImpl implements Iface {
         @Override
-        public List<regionInfo> getRegionsOfTable(String tableName, boolean isCreate, boolean isDrop) throws TException {
+        public List<cacheTable> getRegionsOfTable(String tableName, boolean isCreate, boolean isDrop) throws TException {
             List<Integer> regions;
             if(isCreate) {
                 regions = findNMinRegion(3);
+                tablesToRegions.put(tableName, regions);
+                for(Integer i:regions) {
+                    List<String> tables = regionsToTables.get(i);
+                    tables.add(tableName);
+                }
             }
             else {
                 regions = tablesToRegions.get(tableName);
                 if(isDrop) {
-                    tablesToRegions.remove(tableName);
                     for(Integer i:regions) {
-                        numsOfRegionTables.replace(i, numsOfRegionTables.get(i)-1);
+                        List<String> tables = regionsToTables.get(i);
+                        tables.remove(tableName);
                     }
+                    tablesToRegions.remove(tableName);
                 }
             }
-            List<regionInfo> regionsINFO = new ArrayList<>();
+            List<cacheTable> regionsINFO = new ArrayList<>();
             for(Integer i:regions) {
                 regionsINFO.add(regionsInfomation.get(i));
             }
@@ -129,6 +170,7 @@ public class Master implements Watcher, Runnable {
         @Override
         public void finishCopyTable(String tableName, int uid) throws TException {
             tablesToRegions.get(tableName).add(uid);
+            regionsToTables.get(uid).add(tableName);
         }
     }
 
@@ -138,17 +180,17 @@ public class Master implements Watcher, Runnable {
      * @return  返回N个region
      */
     public List<Integer> findNMinRegion(int N) {
-        List<Map.Entry<Integer, Integer>> list = new ArrayList<Map.Entry<Integer, Integer>>(numsOfRegionTables.entrySet());
-        Collections.sort(list, new Comparator<Map.Entry<Integer, Integer>>() {
-            public int compare(Map.Entry<Integer, Integer> o1, Map.Entry<Integer, Integer> o2) {
-                return (o1.getValue() - o2.getValue());
+        List<Map.Entry<Integer, List<String>>> list = new ArrayList<Map.Entry<Integer, List<String>>>(regionsToTables.entrySet());
+        Collections.sort(list, new Comparator<Map.Entry<Integer, List<String>>>() {
+            public int compare(Map.Entry<Integer, List<String>> o1, Map.Entry<Integer, List<String>> o2) {
+                return (o1.getValue().size() - o2.getValue().size());
             }
         });
 
         List<Integer> NMinRegion = new ArrayList<>();
 
         for(int i = 0; i < N; i++) {
-            Map.Entry<Integer, Integer> t = list.get(i);
+            Map.Entry<Integer, List<String>> t = list.get(i);
             NMinRegion.add(t.getKey());
         }
         return NMinRegion;
