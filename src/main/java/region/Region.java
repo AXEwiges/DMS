@@ -15,8 +15,10 @@ import master.rpc.cacheTable;
 import com.alibaba.fastjson.JSON;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 
@@ -34,7 +36,7 @@ public class Region implements Runnable {
     /**
      * 存储在zookeeper上的region信息
      */
-    public cacheTable regionI;
+    public cacheTable regionInfo;
     /**
      * 用于储存全部的表名
      * */
@@ -42,14 +44,15 @@ public class Region implements Runnable {
     /**
      * 用于储存全部的log信息，用于同步
      * */
-    public static DMSLog regionLog;
+    public DMSLog regionLog;
 
-    public Region() {
+    public Region() throws IOException {
         this._C = new config();
         _C.loadYaml();
-        regionI = new cacheTable(_C.network.ip, _C.network.port, _C.metadata.uid);
+        _C.network.port = 2188;
+        regionLog = new DMSLog(_C);
+        regionInfo = new cacheTable(_C.network.ip, _C.network.port, _C.metadata.uid);
     }
-
     /**
      * Connect to the ZooKeeper server.
      */
@@ -63,7 +66,7 @@ public class Region implements Runnable {
         if (stat == null) {
             zk.create("/region_servers", null, OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         }
-        zk.create("/region_servers/" + _C.metadata.uid, JSON.toJSONString(regionI).getBytes(), OPEN_ACL_UNSAFE,
+        zk.create("/region_servers/" + _C.metadata.uid, JSON.toJSONString(regionInfo).getBytes(), OPEN_ACL_UNSAFE,
                 CreateMode.EPHEMERAL);
         // Read master
         // TODO
@@ -71,6 +74,17 @@ public class Region implements Runnable {
 
     public void run() {
         try {
+            System.out.println("Running");
+            for(Map.Entry<String, List<String>> m : regionLog.mainLog.entrySet()){
+                for(String s : m.getValue()){
+                    System.out.println(s);
+                }
+            }
+            RegionImpl impl = new RegionImpl();
+            try{
+                impl.requestCopyTable("0.0.0.0:2181", "DMS", false);
+            } catch (Exception ignored) {}
+
             synchronized (this) {
                 wait();
             }
@@ -79,7 +93,7 @@ public class Region implements Runnable {
         }
     }
 
-    public static class RegionImpl implements Iface {
+    public class RegionImpl implements Iface {
         @Override
         public execResult statementExec(String cmd) throws TException {
             execResult res = Interpreter.runSingleCommand(cmd);
@@ -95,7 +109,7 @@ public class Region implements Runnable {
         @Override
         public boolean requestCopyTable(String destination, String tableName, boolean isMove) throws TException {
             String[] address = destination.split(":");
-            DMSLog.transfer(address[0], address[1], tableName);
+            regionLog.transfer(address[0], address[1], tableName);
             return false;
         }
         @Override
@@ -110,7 +124,10 @@ public class Region implements Runnable {
         Scanner scanner = new Scanner(System.in);
         String name = scanner.nextLine();
         Region rs = new Region();
-        rs.connectToZK();
+        rs.regionLog.mainLog.put("DMS", new ArrayList<>());
+        rs.regionLog.mainLog.get("DMS").add("insert 2");
+        System.out.println("Put");
+//        rs.connectToZK();
         rs.run();
     }
 }
