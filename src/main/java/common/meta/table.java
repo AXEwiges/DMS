@@ -5,12 +5,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class table {
     public static String name;
 
+    public table(){}
     public table(String s) {
+        name = s;
     }
 
 }
