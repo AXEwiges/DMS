@@ -12,12 +12,6 @@ public class ClientInfo extends cacheTable {
     this.port = port;
   }
 
-  public ClientInfo(String ip, int port, int uid) {
-    this.ip = ip;
-    this.port = port;
-    this.uid = uid;
-  }
-
   public ClientInfo setUid(int uid) {
     this.uid = uid;
     return this;
@@ -58,7 +52,7 @@ public class ClientInfo extends cacheTable {
       return false;
     }
     ClientInfo that = (ClientInfo) o;
-    return port == that.port && ip.equals(that.ip);
+    return uid == that.uid && port == that.port && ip.equals(that.ip);
   }
 
   @Override

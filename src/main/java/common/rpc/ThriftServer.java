@@ -20,6 +20,12 @@ public class ThriftServer {
   private final TServer server;
   private final int port;
 
+  /**
+   * 创建 Thrift 服务。
+   * @param processor
+   * @param port 端口
+   * @throws TTransportException
+   */
   public ThriftServer(TProcessor processor, int port)
       throws TTransportException {
     this.port = port;
@@ -35,6 +41,9 @@ public class ThriftServer {
     return port;
   }
 
+  /**
+   * 启动 Thrift 服务。
+   */
   public void startServer() {
     server.serve();
   }

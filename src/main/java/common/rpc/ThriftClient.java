@@ -14,6 +14,13 @@ import region.rpc.Region;
  */
 public class ThriftClient {
 
+  /**
+   * 获取一个用于连接 Master 的 Thrift 连接。
+   * @param host Master 主机地址
+   * @param port Master Thrift 服务端口
+   * @return Client 对象
+   * @throws TTransportException
+   */
   public static Master.Client getForMaster(String host, int port)
       throws TTransportException {
     TTransport transport = new TSocket(host, port);
@@ -22,6 +29,13 @@ public class ThriftClient {
     return new Master.Client(protocol);
   }
 
+  /**
+   * 获取一个用于连接 Region Server 的 Thrift 连接。
+   * @param host Region Server 主机地址
+   * @param port Region Server Thrift 服务端口
+   * @return Client 对象
+   * @throws TTransportException
+   */
   public static Region.Client getForRegionServer(String host, int port)
       throws TTransportException {
     TTransport transport = new TSocket(host, port);
