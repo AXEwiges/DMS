@@ -12,7 +12,6 @@ import java.util.List;
  * @version 5.8
  * */
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 class logLoad {
     public static List<String> Log;
@@ -31,7 +30,6 @@ class logLoad {
  * @version 5.8
  * */
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
 public class DMSLog {
     /**

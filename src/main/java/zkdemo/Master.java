@@ -34,7 +34,7 @@ public class Master implements Watcher, Runnable {
   class EventCallback implements Watcher, ChildrenCallback {
 
     /**
-     * Watcher 的回调，当子节点改变时调用
+     * Watcher 的回调，当子节点改变时调用，实现 Watcher 接口
      * @param event
      */
     @Override
@@ -47,7 +47,7 @@ public class Master implements Watcher, Runnable {
     }
 
     /**
-     * getChildren 查询的回调，返回结果时调用
+     * getChildren 查询的回调，返回结果时调用。实现 ChildrenCallback 接口。
      * @param rc 返回值
      * @param path 查询路径
      * @param ctx
