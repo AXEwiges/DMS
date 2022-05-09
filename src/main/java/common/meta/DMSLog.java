@@ -3,11 +3,12 @@ package common.meta;
 import config.config;
 import lombok.Data;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -96,12 +97,12 @@ public class DMSLog {
 
         @Override
         public void run() {
-            System.out.println("Start Send to: " + socket.toString());
+            System.out.println("[Start Send to] " + socket.toString());
             try{
                 ObjectOutputStream sendOut = new ObjectOutputStream(socket.getOutputStream());
                 sendOut.writeObject(payload);
                 sendOut.flush();
-                System.out.println("Send Successfully");
+                System.out.println("[SyncData Send Successfully]");
                 System.out.println(payload.toString());
             } catch (Exception ignored) {
                 try {
@@ -118,7 +119,7 @@ public class DMSLog {
         public syncRecvThread() {
             try {
                 this.server = new ServerSocket(_LC.network.port);
-                System.out.println("Start Receive Sync Message");
+                System.out.println("[Start Thread SyncRecv]");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -126,12 +127,12 @@ public class DMSLog {
 
         @Override
         public void run() {
-            System.out.println("Start Recv Process, Listening: " + server.toString());
+            System.out.println("[Start Recv Process, Listening] " + server.toString());
             while(true){
                 Socket recv = null;
                 try{
                     recv = server.accept();
-                    System.out.println("connected from " + recv.getRemoteSocketAddress());
+                    System.out.println("[SyncDB command from] " + recv.getRemoteSocketAddress());
                     Thread t = new syncDB(recv);
                     t.start();
                 } catch (Exception ignored) {
@@ -153,33 +154,24 @@ public class DMSLog {
         }
         @Override
         public void run() {
-            System.out.println("SUB PRO START");
+            System.out.println("[Start syncDB]");
             try{
-                System.out.println(socket.getInputStream().toString());
                 ObjectInputStream recvInputStream = new ObjectInputStream(socket.getInputStream());
-                System.out.println("OK: "+recvInputStream.readObject().toString());
-//                if(recvInputStream.readObject() == null){
-//                    System.out.println("OK OK "+recvInputStream.readObject().toString());
-//                }
-                if(recvInputStream.readObject() instanceof logLoad log){
-                    System.out.println("1212121212121");
-                }
                 try{
                     logLoad log = (logLoad)recvInputStream.readObject();
-                    System.out.println("log:" + log);
-                    mainLog.put(log.tableName, log.Log);
-                    checkPoints.put(log.tableName, log.checkPoint);
+                    for(String statement : log.Log){
+                        add(log.tableName, statement);
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
 
-                System.out.println("Received Successfully");
+                System.out.println("[Complete syncDB]");
                 for(Map.Entry<String, List<String>> m : mainLog.entrySet()){
                     for(String s : m.getValue()){
                         System.out.println(s);
                     }
                 }
-//                }
             } catch(Exception e){
                 e.printStackTrace();
             }
