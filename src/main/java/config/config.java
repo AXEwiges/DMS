@@ -26,7 +26,7 @@ public class config {
         this.appVersion = (String) obj.get("appVersion");
         this.metadata = new metadata((boolean)metadata.get("isMaster"), (int)metadata.get("uid"), (String)metadata.get("name"));
         this.cluster = new cluster((String)cluster.get("mainTable"), (int)cluster.get("maxTables"), (int)cluster.get("neighbor"));
-        this.network = new network((int)network.get("timeOut"), (String)network.get("ip"), (int)network.get("port"));
+        this.network = new network((int)network.get("timeOut"), (String)network.get("ip"), (int)network.get("port"), (int)network.get("recvPort"));
     }
 
     public static void main(String[] args) {

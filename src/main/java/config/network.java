@@ -9,4 +9,5 @@ public class network{
     public int timeOut;
     public String ip;
     public int port;
+    public int recvPort;
 }

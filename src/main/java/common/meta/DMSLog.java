@@ -31,11 +31,6 @@ class logLoad implements Serializable {
     }
 }
 
-/**
- * @author AXEwiges
- * @version 5.8
- * */
-//@Data
 public class DMSLog {
     /**
     * 主要Log，存储全部的语句日志，key为表名，value为日志列表
@@ -86,7 +81,11 @@ public class DMSLog {
         Integer integer = checkPoints.get(tableName) + 1;
         checkPoints.put(tableName, integer);
     }
-
+    /**
+     * @author AXEwiges
+     *
+     * 主线程，用于建立socket发送Log用于同步
+     * */
     class syncSendThread extends Thread {
         public static logLoad payload;
         private final Socket socket;
@@ -103,7 +102,6 @@ public class DMSLog {
                 sendOut.writeObject(payload);
                 sendOut.flush();
                 System.out.println("[SyncData Send Successfully]");
-                System.out.println(payload.toString());
             } catch (Exception ignored) {
                 try {
                     socket.close();
@@ -113,12 +111,15 @@ public class DMSLog {
             }
         }
     }
-
+    /**
+     * @author AXEwiges
+     * 主接受线程，用于监听端口并开启子线程处理新加入的同步Log
+     * */
     class syncRecvThread extends Thread {
         public ServerSocket server;
         public syncRecvThread() {
             try {
-                this.server = new ServerSocket(_LC.network.port);
+                this.server = new ServerSocket(_LC.network.recvPort);
                 System.out.println("[Start Thread SyncRecv]");
             } catch (IOException e) {
                 e.printStackTrace();
@@ -146,7 +147,10 @@ public class DMSLog {
             }
         }
     }
-
+    /**
+     * @author AXEwiges
+     * 子线程，用于监听端口并将接收到的数据写入mainLog
+     * */
     class syncDB extends Thread {
         public Socket socket;
         public syncDB(Socket s){
@@ -167,11 +171,7 @@ public class DMSLog {
                 }
 
                 System.out.println("[Complete syncDB]");
-                for(Map.Entry<String, List<String>> m : mainLog.entrySet()){
-                    for(String s : m.getValue()){
-                        System.out.println(s);
-                    }
-                }
+//                testOutput();
             } catch(Exception e){
                 e.printStackTrace();
             }
@@ -200,5 +200,13 @@ public class DMSLog {
      * */
     public static synchronized void receive(){
 
+    }
+
+    public void testOutput(){
+        for(Map.Entry<String, List<String>> m : mainLog.entrySet()){
+            for(String s : m.getValue()){
+                System.out.println(s);
+            }
+        }
     }
 }

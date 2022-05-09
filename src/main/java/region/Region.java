@@ -49,7 +49,6 @@ public class Region implements Runnable {
     public Region() throws IOException {
         this._C = new config();
         _C.loadYaml();
-        _C.network.port = 2188;
         regionLog = new DMSLog(_C);
         regionInfo = new cacheTable(_C.network.ip, _C.network.port, _C.metadata.uid);
     }
