@@ -80,9 +80,9 @@ public class Region implements Runnable {
                 }
             }
             RegionImpl impl = new RegionImpl();
-            try{
-                impl.requestCopyTable("0.0.0.0:2181", "DMS", false);
-            } catch (Exception ignored) {}
+//            try{
+//                impl.requestCopyTable("0.0.0.0:2181", "DMS", false);
+//            } catch (Exception ignored) {}
 
             synchronized (this) {
                 wait();
@@ -109,7 +109,7 @@ public class Region implements Runnable {
         public boolean requestCopyTable(String destination, String tableName, boolean isMove) throws TException {
             String[] address = destination.split(":");
             regionLog.transfer(address[0], address[1], tableName);
-            return false;
+            return true;
         }
         @Override
         public void copyTable() throws TException {

@@ -2,6 +2,7 @@ package common.meta;
 
 import config.config;
 import lombok.Data;
+import master.Master;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -102,6 +103,7 @@ public class DMSLog {
                 sendOut.writeObject(payload);
                 sendOut.flush();
                 System.out.println("[SyncData Send Successfully]");
+//                Master.MasterImpl
             } catch (Exception ignored) {
                 try {
                     socket.close();
