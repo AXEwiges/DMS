@@ -45,25 +45,27 @@ public class Master {
      */
     public static void reset() {
         try {
-            List<Map.Entry<Integer, Integer>> list = new ArrayList<>(timesOfVisit.entrySet());
-            list.sort((Map.Entry<Integer, Integer> o1, Map.Entry<Integer, Integer> o2) -> {
+            if(timesOfVisit.size()>=3) {
+                List<Map.Entry<Integer, Integer>> list = new ArrayList<>(timesOfVisit.entrySet());
+                list.sort((Map.Entry<Integer, Integer> o1, Map.Entry<Integer, Integer> o2) -> {
                     return (o2.getValue() - o1.getValue()); //将region按照访问次数从大到小排序
                 });
-            if(list.get(0).getValue()>list.get(1).getValue()*2&&list.get(0).getValue()>100) {//如果某台regionserver访问次数明显过多
-                int source_uid = list.get(0).getKey();
-                int des_uid = list.get(list.size()-1).getKey();
-                List<String> tables = regionsToTables.get(source_uid);
-                cacheTable source = regionsInfomation.get(source_uid);
-                cacheTable des = regionsInfomation.get(des_uid);
-                Region.Client client = ThriftClient.getForRegionServer(source.ip, 5099);
-                /*
-                 * 把一半的表存储在访问量最少的regionserver上
-                 */
-                for(int i = 0; i < tables.size()/2; i++) {
-                    String tableName = tables.get(0);
-                    tables.remove(0);
-                    tablesToRegions.get(tableName).remove(source_uid);
-                    client.requestCopyTable(des.ip, tableName, true);
+                if(list.get(0).getValue()>list.get(1).getValue()*2&&list.get(0).getValue()>100) {//如果某台regionserver访问次数明显过多
+                    int source_uid = list.get(0).getKey();
+                    int des_uid = list.get(list.size()-1).getKey();
+                    List<String> tables = regionsToTables.get(source_uid);
+                    cacheTable source = regionsInfomation.get(source_uid);
+                    cacheTable des = regionsInfomation.get(des_uid);
+                    Region.Client client = ThriftClient.getForRegionServer(source.ip, 5099);
+                    /*
+                     * 把一半的表存储在访问量最少的regionserver上
+                     */
+                    for(int i = 0; i < tables.size()/2; i++) {
+                        String tableName = tables.get(0);
+                        tables.remove(0);
+                        tablesToRegions.get(tableName).remove(source_uid);
+                        client.requestCopyTable(des.ip, tableName, true);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -167,19 +169,35 @@ public class Master {
         });
 
         masterClient.connect("127.0.0.1:2181", new ClientInfo("1.2.3.4", 1), 3000);
-        Thread.sleep(1000000);
-        Master master = new Master();
-        master.startThriftServer();
-        Timer timer = new Timer();
-        //执行时间，时间单位为毫秒，不得小于等于0
-        int cacheTime = 60000;
-        //延迟时间，时间单位为毫秒，不得小于等于0
-        int delay = 10;
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                Master.reset();
+        Thread t1 = new Thread(()->{
+            try {
+                Master master = new Master();
+                master.startThriftServer();
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                System.out.println("Thread 1 is Interrupted");
             }
-        }, delay, cacheTime);
+        });
+        t1.start();
+        Thread t2 = new Thread(()->{
+            try {
+                Timer timer = new Timer();
+                //执行时间，时间单位为毫秒，不得小于等于0
+                int cacheTime = 6000;
+                //延迟时间，时间单位为毫秒，不得小于等于0
+                int delay = 10;
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        System.out.println("检查是否超载");
+                        Master.reset();
+                    }
+                }, delay, cacheTime);
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                System.out.println("Thread 1 is Interrupted");
+            }
+        });
+        t2.start();
     }
 }

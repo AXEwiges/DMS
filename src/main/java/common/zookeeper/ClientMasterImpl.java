@@ -96,6 +96,7 @@ public class ClientMasterImpl implements Client {
     public void processResult(int rc, String path, Object ctx,
         List<String> children) {
       if (Code.get(rc) == Code.OK) {
+        System.out.println("In " + path + ": " + children);
         Set<String> disconnectedClients = new HashSet<>();
 
         for (String oldClient : clients.keySet()) {
