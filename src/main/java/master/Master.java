@@ -5,6 +5,10 @@ import static org.apache.zookeeper.ZooDefs.Ids.OPEN_ACL_UNSAFE;
 import java.io.IOException;
 import java.util.*;
 
+import common.zookeeper.Client;
+import common.zookeeper.ClientConnectionStrategy;
+import common.zookeeper.ClientInfo;
+import common.zookeeper.ClientMasterImpl;
 import master.rpc.cacheTable;
 import org.apache.thrift.TException;
 import org.apache.zookeeper.AsyncCallback.ChildrenCallback;
@@ -20,158 +24,47 @@ import config.config;
 import com.alibaba.fastjson.JSON;
 import master.rpc.Master.Iface;
 
-public class Master implements Watcher, Runnable {
-
-    private ZooKeeper zk;
-    public config _C;
+/**
+ * 实现Master接口方法
+ */
+class MasterImpl implements Iface {
 
     HashMap<String, List<Integer>> tablesToRegions = new HashMap<>();//存储每张表存放在哪些region上
     HashMap<Integer, List<String>> regionsToTables = new HashMap<>();//存储每个region已经存放表
     HashMap<Integer, cacheTable> regionsInfomation = new HashMap<>();//存储每个region的信息，key是region的uid
 
-    public Master() {
-        this._C = new config();
-        _C.loadYaml();
-    }
-
-    class EventCallback implements Watcher, ChildrenCallback {
-        /**
-         * Watcher 的回调，当子节点改变时调用
-         * @param event
-         */
-        @Override
-        public void process(WatchedEvent event) {
-            if (event.getType() == EventType.NodeChildrenChanged) {
-                if (event.getState() == KeeperState.SyncConnected) {
-                    zk.getChildren(event.getPath(), this, this, null);
-                }
+    @Override
+    public List<cacheTable> getRegionsOfTable(String tableName, boolean isCreate, boolean isDrop) throws TException {
+        List<Integer> regions;
+        if(isCreate) {
+            regions = findNMinRegion(3);
+            tablesToRegions.put(tableName, regions);
+            for(Integer i:regions) {
+                List<String> tables = regionsToTables.get(i);
+                tables.add(tableName);
             }
         }
-
-        /**
-         * getChildren 查询的回调，返回结果时调用
-         * @param rc 返回值
-         * @param path 查询路径
-         * @param ctx
-         * @param children 子节点列表
-         */
-        @Override
-        public void processResult(int rc, String path, Object ctx,
-                                  List<String> children) {
-            if (Code.get(rc) == Code.OK) {
-                System.out.println("In " + path + ": " + children);
-                /**
-                 * 对region新增和断开连接进行处理
-                 */
-                int num1 = children.size();
-                int num2 = regionsInfomation.size();
-                //新增节点
-                if(num1>num2) {
-                    for (String child : children) {
-                        cacheTable cache = JSON.parseObject(child, cacheTable.class);
-                        if(!regionsInfomation.containsKey(cache.uid)) {
-                            regionsInfomation.put(cache.uid, cache);
-                            regionsToTables.put(cache.uid, new ArrayList<>());
-                            //这边考虑负载均衡可以给新来的region分配几个表
-                        }
-                    }
-                }
-                else if(num1<num2) {
-                    Set<Integer> set = regionsInfomation.keySet();
-                    for (String child : children) {
-                        cacheTable cache = JSON.parseObject(child, cacheTable.class);
-                        if(set.contains(cache.uid)) {
-                            set.remove(cache.uid);
-                        }
-                        for(Integer uid:set) {
-                            List<String> list = regionsToTables.get(uid);
-                            for(String name:list) {
-                                //TODO 调用region接口 给region发出复制表指令
-                                tablesToRegions.get(name).remove(uid);
-                            }
-                            regionsToTables.remove(uid);
-                            regionsInfomation.remove(uid);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Connect to the ZooKeeper server.
-     */
-    public void connectToZK()
-            throws IOException, InterruptedException, KeeperException {
-        zk = new ZooKeeper(_C.network.ip + ':' + _C.network.port, _C.network.timeOut, (event) -> {
-            System.out.println("Default watcher: " + event);
-        });
-        // Register master
-        if (zk.exists("/master", null) == null) {
-            zk.create("/master", _C.metadata.name.getBytes(), OPEN_ACL_UNSAFE,
-                    CreateMode.EPHEMERAL);
-        }
-        // Listen for region servers
-        EventCallback eventCallback = new EventCallback();
-        zk.getChildren("/region_servers", eventCallback, eventCallback, null);
-    }
-
-    /**
-     * Process any state changes.
-     *
-     * @param event the watched event
-     */
-    public void process(WatchedEvent event) {
-        System.out.println(event);
-    }
-
-    public void run() {
-        try {
-            synchronized (this) {
-                wait();
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * 实现Master接口方法
-     */
-    class MasterImpl implements Iface {
-        @Override
-        public List<cacheTable> getRegionsOfTable(String tableName, boolean isCreate, boolean isDrop) throws TException {
-            List<Integer> regions;
-            if(isCreate) {
-                regions = findNMinRegion(3);
-                tablesToRegions.put(tableName, regions);
+        else {
+            regions = tablesToRegions.get(tableName);
+            if(isDrop) {
                 for(Integer i:regions) {
                     List<String> tables = regionsToTables.get(i);
-                    tables.add(tableName);
+                    tables.remove(tableName);
                 }
+                tablesToRegions.remove(tableName);
             }
-            else {
-                regions = tablesToRegions.get(tableName);
-                if(isDrop) {
-                    for(Integer i:regions) {
-                        List<String> tables = regionsToTables.get(i);
-                        tables.remove(tableName);
-                    }
-                    tablesToRegions.remove(tableName);
-                }
-            }
-            List<cacheTable> regionsINFO = new ArrayList<>();
-            for(Integer i:regions) {
-                regionsINFO.add(regionsInfomation.get(i));
-            }
-            return regionsINFO;
         }
+        List<cacheTable> regionsINFO = new ArrayList<>();
+        for(Integer i:regions) {
+            regionsINFO.add(regionsInfomation.get(i));
+        }
+        return regionsINFO;
+    }
 
-        @Override
-        public void finishCopyTable(String tableName, int uid) throws TException {
-            tablesToRegions.get(tableName).add(uid);
-            regionsToTables.get(uid).add(tableName);
-        }
+    @Override
+    public void finishCopyTable(String tableName, int uid) throws TException {
+        tablesToRegions.get(tableName).add(uid);
+        regionsToTables.get(uid).add(tableName);
     }
 
     /**
@@ -195,11 +88,38 @@ public class Master implements Watcher, Runnable {
         }
         return NMinRegion;
     }
+}
 
+public class Master {
     public static void main(String[] args)
             throws IOException, InterruptedException, KeeperException {
-        Master master = new Master();
-        master.connectToZK();
-        master.run();
+        MasterImpl master = new MasterImpl();
+        Client masterClient = new ClientMasterImpl(new ClientConnectionStrategy() {
+            @Override
+            public void onConnect(ClientInfo clientInfo) {
+                System.out.println(clientInfo + " connected, uid = " + clientInfo.uid);
+                if(!master.regionsInfomation.containsKey(clientInfo.uid)) {
+                    master.regionsInfomation.put(clientInfo.uid, clientInfo);
+                    master.regionsToTables.put(clientInfo.uid, new ArrayList<>());
+                    //这边考虑负载均衡可以给新来的region分配几个表
+                }
+            }
+
+            @Override
+            public void onDisconnect(ClientInfo clientInfo) {
+                System.out.println(
+                        clientInfo + " disconnected, uid = " + clientInfo.uid);
+                List<String> list = master.regionsToTables.get(clientInfo.uid);
+                for(String tableName:list) {
+                    //TODO 调用region接口 给region发出复制表指令
+                    master.tablesToRegions.get(tableName).remove(clientInfo.uid);
+                }
+                master.regionsToTables.remove(clientInfo.uid);
+                master.regionsInfomation.remove(clientInfo.uid);
+            }
+        });
+
+        masterClient.connect("127.0.0.1:2181", new ClientInfo("1.2.3.4", 1), 3000);
+        Thread.sleep(1000000);
     }
 }
