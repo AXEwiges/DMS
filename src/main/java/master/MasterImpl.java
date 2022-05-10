@@ -2,7 +2,6 @@ package master;
 
 import master.rpc.Master;
 import master.rpc.cacheTable;
-import org.apache.thrift.TException;
 
 import java.util.*;
 
@@ -14,7 +13,7 @@ import java.util.*;
 public class MasterImpl implements Master.Iface {
 
     @Override
-    public List<cacheTable> getRegionsOfTable(String tableName, boolean isCreate, boolean isDrop) throws TException {
+    public List<cacheTable> getRegionsOfTable(String tableName, boolean isCreate, boolean isDrop) {
         List<Integer> regions;
         if(isCreate) {
             regions = master.Master.findNMinRegion(3, tableName);
@@ -35,6 +34,7 @@ public class MasterImpl implements Master.Iface {
         }
         List<cacheTable> regionsINFO = new ArrayList<>();
         for(Integer i:regions) {
+            master.Master.timesOfVisit.replace(i, master.Master.timesOfVisit.get(i) + 1);
             regionsINFO.add(master.Master.regionsInfomation.get(i));
         }
         if(isDrop)
@@ -43,7 +43,7 @@ public class MasterImpl implements Master.Iface {
     }
 
     @Override
-    public void finishCopyTable(String tableName, int uid) throws TException {
+    public void finishCopyTable(String tableName, int uid) {
         master.Master.tablesToRegions.get(tableName).add(uid);
         master.Master.regionsToTables.get(uid).add(tableName);
     }
