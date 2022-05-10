@@ -1,11 +1,6 @@
 package common.rpc;
 
-import java.util.ArrayList;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import master.rpc.Master;
-import master.rpc.Master.Processor;
-import master.rpc.cacheTable;
 import org.apache.thrift.TException;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -56,26 +51,6 @@ public class ThriftServer {
    */
   public static void main(String[] args)
       throws TTransportException, InterruptedException {
-    // 样例实现
-    Master.Iface handler = new Master.Iface() {
-      @Override
-      public List<cacheTable> getRegionsOfTable(String tableName,
-          boolean isCreate, boolean isDrop) throws TException {
-        System.out.println("getRegionsOfTable()");
-        return new ArrayList<cacheTable>();
-      }
 
-      @Override
-      public void finishCopyTable(String tableName, int uid)
-          throws TException {
-        System.out.println("finishCopyTable()");
-      }
-    };
-
-    Processor<Master.Iface> processor = new Master.Processor<>(handler);
-
-    ThriftServer server = new ThriftServer(processor, 5099);
-    server.startServer();
-    Thread.sleep(1000000);
   }
 }
