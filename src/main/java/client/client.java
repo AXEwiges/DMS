@@ -63,8 +63,9 @@ public class client {
             String nLine;
             do {
                 nLine = scan.nextLine();
-                rawCmd.append(nLine);
+                rawCmd.append(" ").append(nLine);
             } while(nLine.indexOf(';') == -1);
+            rawCmd.deleteCharAt(0);
             if(rawCmd.toString().toUpperCase().startsWith("EXECFILE")) {
                 int beginIndex = 8;
                 while(rawCmd.charAt(beginIndex) == ' ') {
@@ -86,8 +87,9 @@ public class client {
                                 br.close();
                                 break;
                             }
-                            fileCmd.append(nLine);
+                            fileCmd.append(" ").append(nLine);
                         } while(line.indexOf(';') == -1);
+                        rawCmd.deleteCharAt(0);
                         handleCmd(fileCmd.toString());
                     }
                 } catch (IOException e) {
@@ -95,6 +97,7 @@ public class client {
                 }
             }
             else {
+//                System.out.println(rawCmd);
                 handleCmd(rawCmd.toString());
             }
         } while(!rawCmd.toString().toUpperCase().startsWith("EXIT") && !rawCmd.toString().toUpperCase().startsWith("QUIT"));
@@ -109,10 +112,11 @@ public class client {
                 beginIndex++;
             }
             int endIndex = beginIndex;
-            while(rawCmd.charAt(endIndex) != ' ') {
+            while(rawCmd.charAt(endIndex) != ' ' && rawCmd.charAt(endIndex) != '(') {
                 endIndex++;
             }
             String tableName = rawCmd.substring(beginIndex, endIndex);
+//            System.out.println(tableName);
             boolean isCreate = true;
             boolean isDrop = false;
             RegionInfo regions = getRegionsOfTable(tableName, isCreate, isDrop);
@@ -128,10 +132,11 @@ public class client {
                 beginIndex++;
             }
             int endIndex = beginIndex;
-            while(rawCmd.charAt(endIndex) != ' ') {
+            while(rawCmd.charAt(endIndex) != ' ' && rawCmd.charAt(endIndex) != ';') {
                 endIndex++;
             }
             String tableName = rawCmd.substring(beginIndex, endIndex);
+//            System.out.println(tableName);
             boolean isCreate = false;
             boolean isDrop = true;
             RegionInfo regions;
@@ -158,11 +163,18 @@ public class client {
                 while(rawCmd.charAt(beginIndex) == ' ') {
                     beginIndex ++;
                 }
+                while(rawCmd.charAt(beginIndex) != ' ') {
+                    beginIndex++;
+                }
+                while(rawCmd.charAt(beginIndex) == ' ') {
+                    beginIndex ++;
+                }
                 int endIndex = beginIndex;
                 while(rawCmd.charAt(endIndex) != ' ' && rawCmd.charAt(endIndex) != '(') {
                     endIndex++;
                 }
                 String tableName = rawCmd.substring(beginIndex, endIndex);
+//                System.out.println(tableName);
                 RegionInfo regions;
                 if((regions = buffer.get(tableName)) == null) {
                     regions = getRegionsOfTable(tableName, isCreate, isDrop);
@@ -185,10 +197,11 @@ public class client {
                     beginIndex++;
                 }
                 int endIndex = beginIndex;
-                while(rawCmd.charAt(endIndex) != ' ') {
+                while(rawCmd.charAt(endIndex) != ' ' && rawCmd.charAt(endIndex) != '(') {
                     endIndex++;
                 }
                 String tableName = rawCmd.substring(beginIndex, endIndex);
+//                System.out.println(tableName);
                 RegionInfo regions;
                 if((regions = buffer.get(tableName)) == null) {
                     regions = getRegionsOfTable(tableName, isCreate, isDrop);
@@ -199,16 +212,64 @@ public class client {
                     /* 在这里进行错误处理 */
                 }
             }
-            else if(CMD.startsWith("SELECT") || CMD.startsWith("DELETE")) {
-                int beginIndex = CMD.indexOf("FROM") + 4;
+            else if(CMD.startsWith("SELECT")) {
+                int beginIndex = 6;
                 while(rawCmd.charAt(beginIndex) == ' ') {
                     beginIndex++;
+                }
+                while(rawCmd.charAt(beginIndex) != ' ') {
+                    beginIndex++;
+                }
+                while(rawCmd.charAt(beginIndex) == ' ') {
+                    beginIndex ++;
+                }
+                while(rawCmd.charAt(beginIndex) != ' ') {
+                    beginIndex++;
+                }
+                while(rawCmd.charAt(beginIndex) == ' ') {
+                    beginIndex ++;
                 }
                 int endIndex = beginIndex;
                 while(rawCmd.charAt(endIndex) != ' ' && rawCmd.charAt(endIndex) != ';') {
                     endIndex++;
                 }
                 String tableName = rawCmd.substring(beginIndex, endIndex);
+//                System.out.println(tableName);
+                RegionInfo regions;
+                if((regions = buffer.get(tableName)) == null) {
+                    regions = getRegionsOfTable(tableName, isCreate, isDrop);
+                    buffer.put(tableName, regions);
+                }
+                MyExec exec = execute(regions, isCreate, isDrop, rawCmd);
+                if(!exec.failed.cache.isEmpty()) {
+                    /* 在这里进行错误处理 */
+                }
+            }
+            else if(CMD.startsWith("DELETE")) {
+                int beginIndex = 6;
+                while (rawCmd.charAt(beginIndex) == ' ') {
+                    beginIndex++;
+                }
+                while (rawCmd.charAt(beginIndex) != ' ') {
+                    beginIndex++;
+                }
+                while (rawCmd.charAt(beginIndex) == ' ') {
+                    beginIndex++;
+                }
+                if(CMD.substring(beginIndex).startsWith("FROM")) {
+                    while (rawCmd.charAt(beginIndex) != ' ') {
+                        beginIndex++;
+                    }
+                    while (rawCmd.charAt(beginIndex) == ' ') {
+                        beginIndex++;
+                    }
+                }
+                int endIndex = beginIndex;
+                while (rawCmd.charAt(endIndex) != ' ' && rawCmd.charAt(endIndex) != ';') {
+                    endIndex++;
+                }
+                String tableName = rawCmd.substring(beginIndex, endIndex);
+//                System.out.println(tableName);
                 RegionInfo regions;
                 if((regions = buffer.get(tableName)) == null) {
                     regions = getRegionsOfTable(tableName, isCreate, isDrop);
@@ -233,7 +294,7 @@ public class client {
             ExecResult res = statementExec(cacheTable, rawCmd);
             if(res.status == SUCCESS) {
                 iterator.remove();
-                exec.result = new String(res.result);
+                exec.result = res.result;
                 if(isCreate) {
                     buffer.putIfAbsent(regions.tableName, regions);
                 }
