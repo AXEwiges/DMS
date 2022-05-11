@@ -17,7 +17,7 @@ public class regionInfo implements org.apache.thrift.TBase<regionInfo, regionInf
   private static final org.apache.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new regionInfoStandardSchemeFactory();
   private static final org.apache.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new regionInfoTupleSchemeFactory();
 
-  public @org.apache.thrift.annotation.Nullable java.util.List<cacheTable> cache; // required
+  public @org.apache.thrift.annotation.Nullable java.util.List<ClientInfo> cache; // required
   public @org.apache.thrift.annotation.Nullable java.lang.String tableName; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
@@ -89,7 +89,7 @@ public class regionInfo implements org.apache.thrift.TBase<regionInfo, regionInf
     java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
     tmpMap.put(_Fields.CACHE, new org.apache.thrift.meta_data.FieldMetaData("cache", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
-            new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, cacheTable.class))));
+            new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, ClientInfo.class))));
     tmpMap.put(_Fields.TABLE_NAME, new org.apache.thrift.meta_data.FieldMetaData("tableName", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
@@ -100,7 +100,7 @@ public class regionInfo implements org.apache.thrift.TBase<regionInfo, regionInf
   }
 
   public regionInfo(
-    java.util.List<cacheTable> cache,
+    java.util.List<ClientInfo> cache,
     java.lang.String tableName)
   {
     this();
@@ -113,9 +113,9 @@ public class regionInfo implements org.apache.thrift.TBase<regionInfo, regionInf
    */
   public regionInfo(regionInfo other) {
     if (other.isSetCache()) {
-      java.util.List<cacheTable> __this__cache = new java.util.ArrayList<cacheTable>(other.cache.size());
-      for (cacheTable other_element : other.cache) {
-        __this__cache.add(new cacheTable(other_element));
+      java.util.List<ClientInfo> __this__cache = new java.util.ArrayList<ClientInfo>(other.cache.size());
+      for (ClientInfo other_element : other.cache) {
+        __this__cache.add(new ClientInfo(other_element));
       }
       this.cache = __this__cache;
     }
@@ -139,23 +139,23 @@ public class regionInfo implements org.apache.thrift.TBase<regionInfo, regionInf
   }
 
   @org.apache.thrift.annotation.Nullable
-  public java.util.Iterator<cacheTable> getCacheIterator() {
+  public java.util.Iterator<ClientInfo> getCacheIterator() {
     return (this.cache == null) ? null : this.cache.iterator();
   }
 
-  public void addToCache(cacheTable elem) {
+  public void addToCache(ClientInfo elem) {
     if (this.cache == null) {
-      this.cache = new java.util.ArrayList<cacheTable>();
+      this.cache = new java.util.ArrayList<ClientInfo>();
     }
     this.cache.add(elem);
   }
 
   @org.apache.thrift.annotation.Nullable
-  public java.util.List<cacheTable> getCache() {
+  public java.util.List<ClientInfo> getCache() {
     return this.cache;
   }
 
-  public regionInfo setCache(@org.apache.thrift.annotation.Nullable java.util.List<cacheTable> cache) {
+  public regionInfo setCache(@org.apache.thrift.annotation.Nullable java.util.List<ClientInfo> cache) {
     this.cache = cache;
     return this;
   }
@@ -206,7 +206,7 @@ public class regionInfo implements org.apache.thrift.TBase<regionInfo, regionInf
       if (value == null) {
         unsetCache();
       } else {
-        setCache((java.util.List<cacheTable>)value);
+        setCache((java.util.List<ClientInfo>)value);
       }
       break;
 
@@ -409,11 +409,11 @@ public class regionInfo implements org.apache.thrift.TBase<regionInfo, regionInf
             if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
               {
                 org.apache.thrift.protocol.TList _list0 = iprot.readListBegin();
-                struct.cache = new java.util.ArrayList<cacheTable>(_list0.size);
-                @org.apache.thrift.annotation.Nullable cacheTable _elem1;
+                struct.cache = new java.util.ArrayList<ClientInfo>(_list0.size);
+                @org.apache.thrift.annotation.Nullable ClientInfo _elem1;
                 for (int _i2 = 0; _i2 < _list0.size; ++_i2)
                 {
-                  _elem1 = new cacheTable();
+                  _elem1 = new ClientInfo();
                   _elem1.read(iprot);
                   struct.cache.add(_elem1);
                 }
@@ -451,7 +451,7 @@ public class regionInfo implements org.apache.thrift.TBase<regionInfo, regionInf
         oprot.writeFieldBegin(CACHE_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.cache.size()));
-          for (cacheTable _iter3 : struct.cache)
+          for (ClientInfo _iter3 : struct.cache)
           {
             _iter3.write(oprot);
           }
@@ -492,7 +492,7 @@ public class regionInfo implements org.apache.thrift.TBase<regionInfo, regionInf
       if (struct.isSetCache()) {
         {
           oprot.writeI32(struct.cache.size());
-          for (cacheTable _iter4 : struct.cache)
+          for (ClientInfo _iter4 : struct.cache)
           {
             _iter4.write(oprot);
           }
@@ -510,11 +510,11 @@ public class regionInfo implements org.apache.thrift.TBase<regionInfo, regionInf
       if (incoming.get(0)) {
         {
           org.apache.thrift.protocol.TList _list5 = iprot.readListBegin(org.apache.thrift.protocol.TType.STRUCT);
-          struct.cache = new java.util.ArrayList<cacheTable>(_list5.size);
-          @org.apache.thrift.annotation.Nullable cacheTable _elem6;
+          struct.cache = new java.util.ArrayList<ClientInfo>(_list5.size);
+          @org.apache.thrift.annotation.Nullable ClientInfo _elem6;
           for (int _i7 = 0; _i7 < _list5.size; ++_i7)
           {
-            _elem6 = new cacheTable();
+            _elem6 = new ClientInfo();
             _elem6.read(iprot);
             struct.cache.add(_elem6);
           }

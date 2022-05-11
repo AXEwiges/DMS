@@ -11,6 +11,6 @@ network:
   timeOut: 3000
   ip: 127.0.0.1
   port: 2181
-  recvPort: 2333
+  recvPort: 2334
 
 

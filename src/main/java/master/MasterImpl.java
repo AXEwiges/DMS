@@ -1,7 +1,7 @@
 package master;
 
 import master.rpc.Master;
-import master.rpc.cacheTable;
+import common.meta.ClientInfo;
 
 import java.util.*;
 
@@ -13,7 +13,7 @@ import java.util.*;
 public class MasterImpl implements Master.Iface {
 
     @Override
-    public List<cacheTable> getRegionsOfTable(String tableName, boolean isCreate, boolean isDrop) {
+    public List<ClientInfo> getRegionsOfTable(String tableName, boolean isCreate, boolean isDrop) {
         List<Integer> regions;
         if(isCreate) {
             regions = master.Master.findNMinRegion(3, tableName);
@@ -32,7 +32,7 @@ public class MasterImpl implements Master.Iface {
                 }
             }
         }
-        List<cacheTable> regionsINFO = new ArrayList<>();
+        List<ClientInfo> regionsINFO = new ArrayList<>();
         for(Integer i:regions) {
             master.Master.timesOfVisit.replace(i, master.Master.timesOfVisit.get(i) + 1);
             regionsINFO.add(master.Master.regionsInfomation.get(i));

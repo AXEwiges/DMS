@@ -11,11 +11,10 @@ import org.apache.zookeeper.data.Stat;
 import region.db.Interpreter;
 import region.rpc.Region.Iface;
 import region.rpc.execResult;
-import master.rpc.cacheTable;
+import master.rpc.ClientInfo;
 import com.alibaba.fastjson.JSON;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +35,7 @@ public class Region implements Runnable {
     /**
      * 存储在zookeeper上的region信息
      */
-    public cacheTable regionInfo;
+    public ClientInfo regionInfo;
     /**
      * 用于储存全部的表名
      * */
@@ -50,7 +49,7 @@ public class Region implements Runnable {
         this._C = new config();
         _C.loadYaml();
         regionLog = new DMSLog(_C);
-        regionInfo = new cacheTable(_C.network.ip, _C.network.port, _C.metadata.uid);
+        regionInfo = new ClientInfo(_C.network.ip, _C.network.port, _C.metadata.uid);
     }
     /**
      * Connect to the ZooKeeper server.
@@ -80,9 +79,9 @@ public class Region implements Runnable {
                 }
             }
             RegionImpl impl = new RegionImpl();
-//            try{
-//                impl.requestCopyTable("0.0.0.0:2181", "DMS", false);
-//            } catch (Exception ignored) {}
+            try{
+                impl.requestCopyTable("0.0.0.0:2333", "DMS", false);
+            } catch (Exception ignored) {}
 
             synchronized (this) {
                 wait();

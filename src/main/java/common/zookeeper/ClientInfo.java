@@ -1,11 +1,9 @@
 package common.zookeeper;
 
-import master.rpc.cacheTable;
-
 /**
  * 用来向 ZooKeeper 表示 Master 或者 RegionServer 开放 thrift 连接的端口。
  */
-public class ClientInfo extends cacheTable {
+public class ClientInfo extends master.rpc.ClientInfo {
 
   public ClientInfo(String ip, int port) {
     this.ip = ip;

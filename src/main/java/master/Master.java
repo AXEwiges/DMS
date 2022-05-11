@@ -7,10 +7,9 @@ import common.rpc.ThriftClient;
 import common.rpc.ThriftServer;
 import common.zookeeper.Client;
 import common.zookeeper.ClientConnectionStrategy;
-import common.zookeeper.ClientInfo;
 import common.zookeeper.ClientMasterImpl;
 import lombok.Data;
-import master.rpc.cacheTable;
+import master.rpc.ClientInfo;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.apache.zookeeper.KeeperException;
@@ -22,7 +21,7 @@ public class Master {
 
     static HashMap<String, List<Integer>> tablesToRegions = new HashMap<>();//存储每张表存放在哪些region上
     static HashMap<Integer, List<String>> regionsToTables = new HashMap<>();//存储每个region已经存放表
-    static HashMap<Integer, cacheTable> regionsInfomation = new HashMap<>();//存储每个region的信息，key是region的uid
+    static HashMap<Integer, ClientInfo> regionsInfomation = new HashMap<>();//存储每个region的信息，key是region的uid
     static HashMap<Integer, Integer> timesOfVisit = new HashMap<>();//存储每个region被访问的次数，用于检测region繁忙
 
     /**
@@ -54,8 +53,8 @@ public class Master {
                     int source_uid = list.get(0).getKey();
                     int des_uid = list.get(list.size()-1).getKey();
                     List<String> tables = regionsToTables.get(source_uid);
-                    cacheTable source = regionsInfomation.get(source_uid);
-                    cacheTable des = regionsInfomation.get(des_uid);
+                    ClientInfo source = regionsInfomation.get(source_uid);
+                    ClientInfo des = regionsInfomation.get(des_uid);
                     Region.Client client = ThriftClient.getForRegionServer(source.ip, 5099);
                     /*
                      * 把一半的表存储在访问量最少的regionserver上
@@ -67,6 +66,12 @@ public class Master {
                         client.requestCopyTable(des.ip, tableName, true);
                     }
                 }
+            }
+            /*
+             * 重置访问次数
+             */
+            for(int uid:timesOfVisit.keySet()) {
+                timesOfVisit.replace(uid, 0);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -105,7 +110,7 @@ public class Master {
             throws IOException, InterruptedException, KeeperException, TTransportException {
         Client masterClient = new ClientMasterImpl(new ClientConnectionStrategy() {
             @Override
-            public void onConnect(ClientInfo clientInfo) {
+            public void onConnect(common.zookeeper.ClientInfo clientInfo) {
                 try {
                     System.out.println(clientInfo + " connected, uid = " + clientInfo.uid);
                     if(!regionsInfomation.containsKey(clientInfo.uid)) {
@@ -144,7 +149,7 @@ public class Master {
             }
 
             @Override
-            public void onDisconnect(ClientInfo clientInfo) {
+            public void onDisconnect(common.zookeeper.ClientInfo clientInfo) {
                 try {
                     System.out.println(
                             clientInfo + " disconnected, uid = " + clientInfo.uid);
@@ -168,7 +173,7 @@ public class Master {
             }
         });
 
-        masterClient.connect("127.0.0.1:2181", new ClientInfo("1.2.3.4", 1), 3000);
+        masterClient.connect("127.0.0.1:2181", new common.zookeeper.ClientInfo("1.2.3.4", 1), 3000);
         Thread t1 = new Thread(()->{
             try {
                 Master master = new Master();
