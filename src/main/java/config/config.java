@@ -29,7 +29,7 @@ public class config {
         this.metadata = new metadata((boolean)metadata.get("isMaster"), (int)metadata.get("uid"), (String)metadata.get("name"));
         this.cluster = new cluster((String)cluster.get("mainTable"), (int)cluster.get("maxTables"), (int)cluster.get("neighbor"));
         this.network = new network((int)network.get("timeOut"), (int)network.get("rpcPort"), (int)network.get("socketPort"));
-        this.zookeeper = new zookeeper((String)network.get("ip"), (int)network.get("port"));
+        this.zookeeper = new zookeeper((String)zookeeper.get("ip"), (int)zookeeper.get("port"));
     }
 
     public static void main(String[] args) {

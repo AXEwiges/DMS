@@ -1,6 +1,8 @@
 package region;
 
 import config.config;
+import org.apache.thrift.TException;
+import org.apache.zookeeper.KeeperException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,19 +11,17 @@ import java.io.IOException;
 import java.io.ObjectInputFilter;
 
 import static org.junit.jupiter.api.Assertions.*;
-import org.apache.log4j.Logger;
 
 class RegionTest {
-    Logger log = Logger.getLogger(RegionTest.class);
 
     @BeforeEach
     void setUp() {
-        log.info("Start Test");
+        System.out.println("Start Test");
     }
 
     @AfterEach
     void tearDown() {
-        log.info("End Test");
+        System.out.println("End Test");
     }
 
     @Test
@@ -34,19 +34,29 @@ class RegionTest {
         _CA.metadata.name = "Test RegionServer A";
 
         config _CB = new config();
+        _CB.loadYaml();
 
         _CB.network.rpcPort = 2022;
         _CB.network.socketPort = 2023;
         _CB.metadata.name = "Test RegionServer B";
 
-        Region A = new Region();
-        Region B = new Region();
+        try{
+            Region A = new Region(_CA);
+            Region B = new Region(_CB);
 
-        B.regionLog.add("T1", "insert into T1(a, b, c) values (5, 6, 7)");
-        B.regionLog.add("T1", "insert into T1(a, b, c) values (8, 7, 6)");
-        B.regionLog.add("T2", "insert into T2(b, c) values (1, 3)");
+            B.regionLog.add("T1", "insert into T1(a, b, c) values (5, 6, 7)");
+            B.regionLog.add("T1", "insert into T1(a, b, c) values (8, 7, 6)");
+            B.regionLog.add("T2", "insert into T2(b, c) values (1, 3)");
 
-        A.run();
-        B.run();
+            new Thread(A).start();
+            new Thread(B).start();
+
+            boolean result = B.RI.requestCopyTable("127.0.0.1:" + _CA.network.socketPort, "T1", true);
+
+            System.out.println("[Test Result] " + result);
+            A.regionLog.testOutput();
+        } catch (InterruptedException | KeeperException | TException e) {
+            e.printStackTrace();
+        }
     }
 }
