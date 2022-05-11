@@ -2,6 +2,7 @@ package region;
 
 import common.meta.DMSLog;
 import common.meta.table;
+import common.zookeeper.ClientRegionServerImpl;
 import config.config;
 import org.apache.thrift.TException;
 import org.apache.zookeeper.CreateMode;
@@ -27,7 +28,7 @@ public class Region implements Runnable {
     /**
      * 连接Zookeeper集群
      * */
-    private ZooKeeper zk;
+    private ClientRegionServerImpl zk;
     /**
      * 加载服务器配置信息
      * */
@@ -54,21 +55,21 @@ public class Region implements Runnable {
     /**
      * Connect to the ZooKeeper server.
      */
-    public void connectToZK()
-            throws IOException, InterruptedException, KeeperException {
-        zk = new ZooKeeper(_C.network.ip + ':' + _C.network.port, _C.network.timeOut, (event) -> {
-            System.out.println("Default watcher: " + event);
-        });
-        // Register this region server
-        Stat stat = zk.exists("/region_servers", false);
-        if (stat == null) {
-            zk.create("/region_servers", null, OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        }
-        zk.create("/region_servers/" + _C.metadata.uid, JSON.toJSONString(regionInfo).getBytes(), OPEN_ACL_UNSAFE,
-                CreateMode.EPHEMERAL);
-        // Read master
-        // TODO
-    }
+//    public void connectToZK()
+//            throws IOException, InterruptedException, KeeperException {
+//        zk = new ZooKeeper(_C.network.ip + ':' + _C.network.port, _C.network.timeOut, (event) -> {
+//            System.out.println("Default watcher: " + event);
+//        });
+//        // Register this region server
+//        Stat stat = zk.exists("/region_servers", false);
+//        if (stat == null) {
+//            zk.create("/region_servers", null, OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+//        }
+//        zk.create("/region_servers/" + _C.metadata.uid, JSON.toJSONString(regionInfo).getBytes(), OPEN_ACL_UNSAFE,
+//                CreateMode.EPHEMERAL);
+//        // Read master
+//        // TODO
+//    }
 
     public void run() {
         try {
