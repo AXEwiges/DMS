@@ -2,8 +2,6 @@ package master;
 
 import master.rpc.Master;
 import common.meta.ClientInfo;
-
-import java.nio.Buffer;
 import java.util.*;
 
 /**
@@ -24,7 +22,7 @@ public class MasterImpl implements Master.Iface {
     public List<ClientInfo> getRegionsOfTable(String tableName, boolean isCreate, boolean isDrop) {
         List<Integer> regions;
         if(isCreate) {
-            regions = master.Master.findNMinRegion(3, tableName);
+            regions = master.Master.findNMinRegion(3, new ArrayList<>());
             master.Master.tablesToRegions.put(tableName, regions);
             for(Integer i:regions) {
                 List<String> tables = master.Master.regionsToTables.get(i);
@@ -61,17 +59,62 @@ public class MasterImpl implements Master.Iface {
         master.Master.regionsToTables.get(uid).add(tableName);
     }
 
+    public static void print() {
+        System.out.println(master.Master.regionsInfomation.toString());
+        System.out.println(master.Master.regionsToTables.toString());
+        System.out.println(master.Master.tablesToRegions.toString());
+        System.out.println(master.Master.timesOfVisit.toString());
+    }
+
+    /**
+     * for testing
+     * @param args
+     */
     public static void main(String[] args) {
         MasterImpl m = new MasterImpl();
         master.Master.MasterConnectionStrategy masterConnectionStrategy = new master.Master.MasterConnectionStrategy();
         int uid = 1;
-        StringBuilder ip = new StringBuilder("1.2.3.4");
         int rpcPort = 1;
         int socketPort = 100;
         for(int i = 0; i < 10; i++) {
-            ClientInfo client = new ClientInfo(ip.toString(), rpcPort, socketPort, uid);
+            String ip = uid + ".2.3.4";
+            ClientInfo client = new ClientInfo(ip, rpcPort, socketPort, uid);
             masterConnectionStrategy.onConnect(client);
             uid++;
+            rpcPort++;
+            socketPort++;
+//            print();
         }
+        for(int i = 0 ; i < 20; i++) {
+            System.out.println(m.getRegionsOfTable(i+"表", true, false));
+//            print();
+        }
+//        for(int i = 0 ; i < 5; i++) {
+//            System.out.println(m.getRegionsOfTable(i+"表", false, true));
+////            print();
+//        }
+//        for(int i = 6 ; i < 10; i++) {
+//            System.out.println(m.getRegionsOfTable(i+"表", false, false));
+//            print();
+//        }
+//        print();
+//        ClientInfo client = new ClientInfo("1.2.3.4", 1, 100, 1);
+//        masterConnectionStrategy.onDisconnect(client);
+//        print();
+        master.Master.timesOfVisit.replace(1,101);
+        print();
+        Timer timer = new Timer();
+        //执行时间，时间单位为毫秒，不得小于等于0
+        int cacheTime = 6000;
+        //延迟时间，时间单位为毫秒，不得小于等于0
+        int delay = 10;
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                System.out.println("检查是否超载");
+                master.Master.reset();
+                print();
+            }
+        }, delay, cacheTime);
     }
 }

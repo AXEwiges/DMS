@@ -9,21 +9,21 @@ import common.zookeeper.ClientConnectionStrategy;
 import common.zookeeper.ClientMasterImpl;
 import lombok.Data;
 import master.rpc.Master.Iface;
-import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.apache.zookeeper.KeeperException;
 import region.rpc.Region;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Data
 public class Master {
-
-    static HashMap<String, List<Integer>> tablesToRegions = new HashMap<>();//存储每张表存放在哪些region上
-    static HashMap<Integer, List<String>> regionsToTables = new HashMap<>();//存储每个region已经存放表
-    static HashMap<Integer, ClientInfo> regionsInfomation = new HashMap<>();//存储每个region的信息，key是region的uid
-    static HashMap<Integer, Integer> timesOfVisit = new HashMap<>();//存储每个region被访问的次数，用于检测region繁忙
+    static ConcurrentHashMap<String, List<Integer>> tablesToRegions = new ConcurrentHashMap<>();//存储每张表存放在哪些region上
+    static ConcurrentHashMap<Integer, List<String>> regionsToTables = new ConcurrentHashMap<>();//存储每个region已经存放表
+    static ConcurrentHashMap<Integer, ClientInfo> regionsInfomation = new ConcurrentHashMap<>();//存储每个region的信息，key是region的uid
+    static ConcurrentHashMap<Integer, Integer> timesOfVisit = new ConcurrentHashMap<>();//存储每个region被访问的次数，用于检测region繁忙
 
     static class MasterConnectionStrategy implements ClientConnectionStrategy {
         @Override
@@ -33,13 +33,14 @@ public class Master {
                 if (!regionsInfomation.containsKey(clientInfo.uid)) {
                     regionsInfomation.put(clientInfo.uid, clientInfo);
                     timesOfVisit.put(clientInfo.uid, 0);
-                    regionsToTables.put(clientInfo.uid, new ArrayList<>());
+                    regionsToTables.put(clientInfo.uid, new CopyOnWriteArrayList<>());
                     //考虑负载均衡给新来的region分配几个表
                     int numOfTables = tablesToRegions.size(); //表的数量
                     int numOfRegions = regionsInfomation.size(); //region的数量
                     int avg = numOfTables * 3 / numOfRegions;
                     List<String> tables = regionsToTables.get(clientInfo.uid); //tables存放新建region存有的表list
                     for (Integer uid : regionsToTables.keySet()) {
+                        if (uid == clientInfo.uid) continue;
                         String source_ip = regionsInfomation.get(uid).ip;
                         if (tables.size() >= avg) break;
                         try {
@@ -70,21 +71,27 @@ public class Master {
             try {
                 System.out.println(
                         clientInfo + " disconnected, uid = " + clientInfo.uid);
+                if (!regionsInfomation.containsKey(clientInfo.uid)) return;
                 List<String> list = regionsToTables.get(clientInfo.uid);
                 for (String tableName : list) {
-                    tablesToRegions.get(tableName).remove(clientInfo.uid);
                     Integer source_uid = tablesToRegions.get(tableName).get(0);
                     String source_ip = regionsInfomation.get(source_uid).ip;
                     Region.Client client = ThriftClient.getForRegionServer(source_ip, 5099);
-                    List<Integer> uids = findNMinRegion(1, tableName);
+                    List<Integer> uids = findNMinRegion(1, tablesToRegions.get(tableName));
+                    tablesToRegions.get(tableName).remove(clientInfo.uid);
                     Integer des_uid = uids.get(0);
                     String des_ip = regionsInfomation.get(des_uid).ip;
                     client.requestCopyTable(des_ip, tableName, false);
+                    /*
+                    测试finishCopyTable函数
+                     */
+//                    MasterImpl m = new MasterImpl();
+//                    m.finishCopyTable(tableName, des_uid);
                 }
                 regionsToTables.remove(clientInfo.uid);
                 timesOfVisit.remove(clientInfo.uid);
                 regionsInfomation.remove(clientInfo.uid);
-            } catch (TException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -112,7 +119,7 @@ public class Master {
     public static void reset() {
         try {
             if (timesOfVisit.size() >= 3) {
-                List<Map.Entry<Integer, Integer>> list = new ArrayList<>(
+                List<Map.Entry<Integer, Integer>> list = new CopyOnWriteArrayList<>(
                         timesOfVisit.entrySet());
                 list.sort(
                         (Map.Entry<Integer, Integer> o1, Map.Entry<Integer, Integer> o2) -> {
@@ -121,20 +128,26 @@ public class Master {
                 if (list.get(0).getValue() > list.get(1).getValue() * 2
                         && list.get(0).getValue() > 100) {//如果某台regionserver访问次数明显过多
                     int source_uid = list.get(0).getKey();
-                    int des_uid = list.get(list.size() - 1).getKey();
                     List<String> tables = regionsToTables.get(source_uid);
                     ClientInfo source = regionsInfomation.get(source_uid);
-                    ClientInfo des = regionsInfomation.get(des_uid);
                     Region.Client client = ThriftClient.getForRegionServer(source.ip,
                             5099);
                     /*
-                     * 把一半的表存储在访问量最少的regionserver上
+                     * 把一半的表存储在其他的regionserver上
                      */
                     for (int i = 0; i < tables.size() / 2; i++) {
                         String tableName = tables.get(0);
                         tables.remove(0);
+                        List<Integer> l = findNMinRegion(1, tablesToRegions.get(tableName));
+                        int des_uid = l.get(0);
+                        ClientInfo des = regionsInfomation.get(des_uid);
                         tablesToRegions.get(tableName).remove(source_uid);
                         client.requestCopyTable(des.ip, tableName, true);
+                        /*
+                            测试finishCopyTable函数
+                        */
+//                        MasterImpl m = new MasterImpl();
+//                        m.finishCopyTable(tableName, des_uid);
                     }
                 }
             }
@@ -155,26 +168,22 @@ public class Master {
      * @param N 表示要返回的region个数
      * @return 返回N个region
      */
-    public static List<Integer> findNMinRegion(int N, String tableName) {
-        List<Map.Entry<Integer, List<String>>> list = new ArrayList<>(
+    public static List<Integer> findNMinRegion(int N, List<Integer> already) {
+        List<Map.Entry<Integer, List<String>>> list = new CopyOnWriteArrayList<>(
                 regionsToTables.entrySet());
         list.sort(Comparator.comparingInt(
                 (Map.Entry<Integer, List<String>> o) -> o.getValue().size()));
 
-        List<Integer> NMinRegion = new ArrayList<>();
+        List<Integer> NMinRegion = new CopyOnWriteArrayList<>();
 
         for (int i = 0, j = 0; i < regionsInfomation.size() && j < N; i++) {
             Map.Entry<Integer, List<String>> t = list.get(i);
             int uid = t.getKey();
-            List<Integer> regions = new ArrayList<>();
             /*
              * 确保返回的regionlist里面不包含已经存有该表的region
              */
-            if (tablesToRegions.containsKey(tableName)) {
-                regions = tablesToRegions.get(tableName);
-            }
-            if (!regions.contains(uid)) {
-                NMinRegion.add(t.getKey());
+            if (!already.contains(uid)) {
+                NMinRegion.add(uid);
                 j++;
             }
         }
