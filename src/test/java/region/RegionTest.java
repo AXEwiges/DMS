@@ -25,7 +25,7 @@ class RegionTest {
     }
 
     @Test
-    void regionConnections() throws IOException {
+    void regionCopyTable() throws IOException {
         config _CA = new config();
         _CA.loadYaml();
 
