@@ -133,7 +133,7 @@ public class Master {
                                         if(!tables.contains(tableName)) {
                                             regionsToTables.get(uid).remove(0);
                                             tablesToRegions.get(tableName).remove(uid);
-                                            client.requestCopyTable(clientInfo.ip, tableName, true);
+                                            client.requestCopyTable(clientInfo.ip+":"+clientInfo.socketPort, tableName, true);
                                         }
                                         if(tables.size()>=avg) break;
                                     }
