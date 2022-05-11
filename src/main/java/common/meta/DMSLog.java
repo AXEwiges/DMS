@@ -165,13 +165,11 @@ public class DMSLog {
                 ObjectInputStream recvInputStream = new ObjectInputStream(socket.getInputStream());
                 try{
                     logLoad log = (logLoad)recvInputStream.readObject();
-                    for(String statement : log.Log){
+                    for(String statement : log.Log)
                         add(log.tableName, statement);
-                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-
                 System.out.println("[Complete syncDB]");
 //                testOutput();
             } catch(Exception e){
