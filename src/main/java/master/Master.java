@@ -24,6 +24,71 @@ public class Master {
     static HashMap<Integer, ClientInfo> regionsInfomation = new HashMap<>();//存储每个region的信息，key是region的uid
     static HashMap<Integer, Integer> timesOfVisit = new HashMap<>();//存储每个region被访问的次数，用于检测region繁忙
 
+    static class MasterConnectionStrategy implements ClientConnectionStrategy{
+        @Override
+        public void onConnect(ClientInfo clientInfo) {
+            try {
+                System.out.println(clientInfo + " connected, uid = " + clientInfo.uid);
+                if(!regionsInfomation.containsKey(clientInfo.uid)) {
+                    regionsInfomation.put(clientInfo.uid, clientInfo);
+                    timesOfVisit.put(clientInfo.uid, 0);
+                    regionsToTables.put(clientInfo.uid, new ArrayList<>());
+                    //考虑负载均衡给新来的region分配几个表
+                    int numOfTables = tablesToRegions.size(); //表的数量
+                    int numOfRegions = regionsInfomation.size(); //region的数量
+                    int avg = numOfTables * 3 /numOfRegions;
+                    List<String> tables = regionsToTables.get(clientInfo.uid); //tables存放新建region存有的表list
+                    for(Integer uid:regionsToTables.keySet()){
+                        String source_ip = regionsInfomation.get(uid).ip;
+                        if(tables.size()>=avg) break;
+                        try {
+                            Region.Client client = ThriftClient.getForRegionServer(source_ip, 5099);
+                            if(regionsToTables.get(uid).size()>avg) {
+                                for(int j = 0; j < regionsToTables.get(uid).size()-avg; j++) {
+                                    String tableName = regionsToTables.get(uid).get(0);
+                                    if(!tables.contains(tableName)) {
+                                        regionsToTables.get(uid).remove(0);
+                                        tablesToRegions.get(tableName).remove(uid);
+                                        client.requestCopyTable(clientInfo.ip+":"+clientInfo.socketPort, tableName, true);
+                                    }
+                                    if(tables.size()>=avg) break;
+                                }
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onDisconnect(ClientInfo clientInfo) {
+            try {
+                System.out.println(
+                        clientInfo + " disconnected, uid = " + clientInfo.uid);
+                List<String> list = regionsToTables.get(clientInfo.uid);
+                for(String tableName:list) {
+                    tablesToRegions.get(tableName).remove(clientInfo.uid);
+                    Integer source_uid = tablesToRegions.get(tableName).get(0);
+                    String source_ip = regionsInfomation.get(source_uid).ip;
+                    Region.Client client = ThriftClient.getForRegionServer(source_ip, 5099);
+                    List<Integer> uids = findNMinRegion(1, tableName);
+                    Integer des_uid = uids.get(0);
+                    String des_ip = regionsInfomation.get(des_uid).ip;
+                    client.requestCopyTable(des_ip, tableName, false);
+                }
+                regionsToTables.remove(clientInfo.uid);
+                timesOfVisit.remove(clientInfo.uid);
+                regionsInfomation.remove(clientInfo.uid);
+            } catch (TException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     /**
      * 开启thriftserver
      */
@@ -108,72 +173,11 @@ public class Master {
 
     public static void main(String[] args)
             throws IOException, InterruptedException, KeeperException, TTransportException {
-        Client masterClient = new ClientMasterImpl(new ClientConnectionStrategy() {
-            @Override
-            public void onConnect(common.zookeeper.ClientInfo clientInfo) {
-                try {
-                    System.out.println(clientInfo + " connected, uid = " + clientInfo.uid);
-                    if(!regionsInfomation.containsKey(clientInfo.uid)) {
-                        regionsInfomation.put(clientInfo.uid, clientInfo);
-                        timesOfVisit.put(clientInfo.uid, 0);
-                        regionsToTables.put(clientInfo.uid, new ArrayList<>());
-                        //考虑负载均衡给新来的region分配几个表
-                        int numOfTables = tablesToRegions.size(); //表的数量
-                        int numOfRegions = regionsInfomation.size(); //region的数量
-                        int avg = numOfTables * 3 /numOfRegions;
-                        List<String> tables = regionsToTables.get(clientInfo.uid); //tables存放新建region存有的表list
-                        for(Integer uid:regionsToTables.keySet()){
-                            String source_ip = regionsInfomation.get(uid).ip;
-                            if(tables.size()>=avg) break;
-                            try {
-                                Region.Client client = ThriftClient.getForRegionServer(source_ip, 5099);
-                                if(regionsToTables.get(uid).size()>avg) {
-                                    for(int j = 0; j < regionsToTables.get(uid).size()-avg; j++) {
-                                        String tableName = regionsToTables.get(uid).get(0);
-                                        if(!tables.contains(tableName)) {
-                                            regionsToTables.get(uid).remove(0);
-                                            tablesToRegions.get(tableName).remove(uid);
-                                            client.requestCopyTable(clientInfo.ip+":"+clientInfo.socketPort, tableName, true);
-                                        }
-                                        if(tables.size()>=avg) break;
-                                    }
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void onDisconnect(common.zookeeper.ClientInfo clientInfo) {
-                try {
-                    System.out.println(
-                            clientInfo + " disconnected, uid = " + clientInfo.uid);
-                    List<String> list = regionsToTables.get(clientInfo.uid);
-                    for(String tableName:list) {
-                        tablesToRegions.get(tableName).remove(clientInfo.uid);
-                        Integer source_uid = tablesToRegions.get(tableName).get(0);
-                        String source_ip = regionsInfomation.get(source_uid).ip;
-                        Region.Client client = ThriftClient.getForRegionServer(source_ip, 5099);
-                        List<Integer> uids = findNMinRegion(1, tableName);
-                        Integer des_uid = uids.get(0);
-                        String des_ip = regionsInfomation.get(des_uid).ip;
-                        client.requestCopyTable(des_ip, tableName, false);
-                    }
-                    regionsToTables.remove(clientInfo.uid);
-                    timesOfVisit.remove(clientInfo.uid);
-                    regionsInfomation.remove(clientInfo.uid);
-                } catch (TException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        masterClient.connect("127.0.0.1:2181", new common.zookeeper.ClientInfo("1.2.3.4", 1), 3000);
+        Client masterClient = new ClientMasterImpl(new MasterConnectionStrategy());
+        ClientInfo clientInfo = new ClientInfo();
+        clientInfo.setIp("1.2.3.4");
+        clientInfo.setRpcPort(1);
+        masterClient.connect("127.0.0.1:2181", clientInfo, 3000);
         Thread t1 = new Thread(()->{
             try {
                 Master master = new Master();
