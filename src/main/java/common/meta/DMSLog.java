@@ -2,6 +2,7 @@ package common.meta;
 
 import config.config;
 import lombok.Data;
+import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -60,7 +61,7 @@ public class DMSLog {
     /**
      * 加入日志打印
      * */
-    private static final Logger logger = Logger.getLogger(DMSLog.class);
+//    private Logger logger = Logger.getLogger(DMSLog.class);
     public DMSLog(config _C){
         _LC = _C;
 
@@ -69,7 +70,8 @@ public class DMSLog {
         tempLog = new ConcurrentHashMap<>();
         checkPoints = new ConcurrentHashMap<>();
         monitorThread = new syncRecvThread();
-
+        BasicConfigurator.configure();
+//System.out.println()
         monitorThread.start();
     }
     /**
@@ -91,7 +93,7 @@ public class DMSLog {
      *
      * 主线程，用于建立socket发送Log用于同步
      * */
-    static class syncSendThread extends Thread {
+    class syncSendThread extends Thread {
         public static logLoad payload;
         private final Socket socket;
         public syncSendThread(logLoad payload, Socket socket) {
@@ -101,12 +103,12 @@ public class DMSLog {
 
         @Override
         public void run() {
-            logger.info("[Start SyncData] " + socket.toString() + " Table: " + payload.tableName);
+            System.out.println("[Start SyncData] " + socket.toString() + " Table: " + payload.tableName);
             try{
                 ObjectOutputStream sendOut = new ObjectOutputStream(socket.getOutputStream());
                 sendOut.writeObject(payload);
                 sendOut.flush();
-                logger.info("[End SyncData] " + payload.tableName);
+                System.out.println("[End SyncData] " + payload.tableName);
             } catch (Exception ignored) {
                 try {
                     socket.close();
@@ -125,7 +127,7 @@ public class DMSLog {
         public syncRecvThread() {
             try {
                 this.server = new ServerSocket(_LC.network.socketPort);
-                logger.info("[Start Thread SyncRecv]");
+                System.out.println("[Start Thread SyncRecv]");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -133,12 +135,12 @@ public class DMSLog {
 
         @Override
         public void run() {
-            logger.info("[Start Recv Process, Listening] " + server.toString());
+            System.out.println("[Start Recv Process, Listening] " + server.toString());
             while(true){
                 Socket recv = null;
                 try{
                     recv = server.accept();
-                    logger.info("[SyncDB command from] " + recv.getRemoteSocketAddress());
+                    System.out.println("[SyncDB command from] " + recv.getRemoteSocketAddress());
                     Thread t = new syncDB(recv);
                     t.start();
                 } catch (Exception ignored) {
@@ -163,7 +165,7 @@ public class DMSLog {
         }
         @Override
         public void run() {
-            logger.info("[Start syncDB]");
+            System.out.println("[Start syncDB]");
             try{
                 ObjectInputStream recvInputStream = new ObjectInputStream(socket.getInputStream());
                 try{
@@ -171,14 +173,14 @@ public class DMSLog {
                     for(String statement : log.Log)
                         add(log.tableName, statement);
                     synchronized(this){
-                        logger.info("[Running syncLog]");
+                        System.out.println("[Running syncLog]");
                         // TODO: Run command, wait DB debug finish.
-                        logger.info("[Complete syncLog]");
+                        System.out.println("[Complete syncLog]");
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                logger.info("[Complete syncDB]");
+                System.out.println("[Complete syncDB]");
             } catch(Exception e){
                 e.printStackTrace();
             }
@@ -192,14 +194,18 @@ public class DMSLog {
      * @param port 端口
      * @param tableName 表名
      * */
-    public synchronized void transfer(String ip, String port, String tableName) {
+    public synchronized boolean transfer(String ip, String port, String tableName) {
         logLoad payload = new logLoad(mainLog.get(tableName), tableName, checkPoints.get(tableName));
-        logger.info("[Payload ready, Wait for SyncData]");
+        System.out.println("[Payload ready, Wait for SyncData]");
         try {
             syncSendThread sender = new syncSendThread(payload, new Socket(ip, Integer.parseInt(port)));
-            sender.start();
-        } catch (Exception ignored) {
-
+            Thread waiter = new Thread(sender);
+            waiter.start();
+            waiter.join();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
     }
     /**
@@ -211,7 +217,9 @@ public class DMSLog {
     }
 
     public void testOutput(){
+        System.out.println("[Test Output] " + _LC.metadata.name);
         for(Map.Entry<String, List<String>> m : mainLog.entrySet()){
+            System.out.println(m.getKey());
             for(String s : m.getValue()){
                 System.out.println(s);
             }
