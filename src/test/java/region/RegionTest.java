@@ -31,11 +31,13 @@ class RegionTest {
 
         _CA.network.rpcPort = 2020;
         _CA.network.socketPort = 2021;
+        _CA.metadata.name = "Test RegionServer A";
 
         config _CB = new config();
 
         _CB.network.rpcPort = 2022;
         _CB.network.socketPort = 2023;
+        _CB.metadata.name = "Test RegionServer B";
 
         Region A = new Region();
         Region B = new Region();
