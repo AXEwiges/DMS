@@ -9,8 +9,7 @@ cluster:
   neighbor: 0     # One of its neighbor's uid
 network:
   timeOut: 3000
+  recvPort: 2333
+zookeeper:
   ip: 127.0.0.1
   port: 2181
-  recvPort: 2333
-
-
