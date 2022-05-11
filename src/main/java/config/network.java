@@ -7,5 +7,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class network{
     public int timeOut;
-    public int recvPort;
+    public int rpcPort;
+    public int socketPort;
 }

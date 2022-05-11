@@ -5,7 +5,7 @@ import common.meta.table;
 import common.zookeeper.Client;
 import common.zookeeper.ClientRegionServerImpl;
 import config.config;
-import master.rpc.ClientInfo;
+import common.meta.ClientInfo;
 import org.apache.thrift.TException;
 import org.apache.zookeeper.KeeperException;
 import region.db.Interpreter;
@@ -45,8 +45,8 @@ public class Region implements Runnable {
         _C.loadYaml();
         regionLog = new DMSLog(_C);
         regionThrift = new ClientRegionServerImpl();
-//        ClientInfo master = regionThrift.connect("127.0.0.1:2181", new ClientInfo(_C.network.ip, _C.network.port), 3000);
-        regionInfo = new ClientInfo(_C.zookeeper.ip, _C.zookeeper.port, _C.metadata.uid);
+//        ClientInfo master = regionThrift.connect("127.0.0.1:2181", new ClientInfo(_C.zookeeper.ip, _C.zookeeper.port, _C.network.recvPort, 0), 3000);
+//        regionInfo = new ClientInfo(_C.zookeeper.ip, _C.zookeeper.port, _C.metadata.uid);
     }
     /**
      * Connect to the ZooKeeper server.

@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.log4j.Logger;
 
 /**
  * @author AXEwiges
@@ -57,6 +58,10 @@ public class DMSLog {
      * 必要的config数据
      * */
     public config _LC;
+    /**
+     * 加入日志打印
+     * */
+    private static Logger logger = Logger.getLogger(DMSLog.class);
     public DMSLog(config _C){
         _LC = _C;
 
@@ -97,6 +102,7 @@ public class DMSLog {
 
         @Override
         public void run() {
+            logger.
             System.out.println("[Start Send to] " + socket.toString());
             try{
                 ObjectOutputStream sendOut = new ObjectOutputStream(socket.getOutputStream());
