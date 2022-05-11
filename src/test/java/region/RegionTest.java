@@ -1,15 +1,12 @@
 package region;
 
 import config.config;
+
+import java.io.IOException;
+import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.io.ObjectInputFilter;
-
-import static org.junit.jupiter.api.Assertions.*;
-import org.apache.log4j.Logger;
 
 class RegionTest {
     Logger log = Logger.getLogger(RegionTest.class);

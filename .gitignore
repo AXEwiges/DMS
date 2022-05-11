@@ -28,3 +28,6 @@ replay_pid*
 .vscode
 *.iml
 target
+
+# logs
+/logs
