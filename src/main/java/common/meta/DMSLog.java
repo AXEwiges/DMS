@@ -173,6 +173,7 @@ public class DMSLog {
                     synchronized(this){
                         logger.info("[Running syncLog]");
                         // TODO: Run command, wait DB debug finish.
+                        logger.info("[Complete syncLog]");
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
