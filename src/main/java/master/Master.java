@@ -9,7 +9,7 @@ import common.zookeeper.Client;
 import common.zookeeper.ClientConnectionStrategy;
 import common.zookeeper.ClientMasterImpl;
 import lombok.Data;
-import master.rpc.ClientInfo;
+import common.meta.ClientInfo;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.apache.zookeeper.KeeperException;
