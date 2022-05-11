@@ -2,7 +2,7 @@ package common.meta;
 
 import config.config;
 import lombok.Data;
-import master.Master;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -57,6 +57,10 @@ public class DMSLog {
      * 必要的config数据
      * */
     public config _LC;
+    /**
+     * 加入日志打印
+     * */
+    private static final Logger logger = Logger.getLogger(DMSLog.class);
     public DMSLog(config _C){
         _LC = _C;
 
@@ -87,7 +91,7 @@ public class DMSLog {
      *
      * 主线程，用于建立socket发送Log用于同步
      * */
-    class syncSendThread extends Thread {
+    static class syncSendThread extends Thread {
         public static logLoad payload;
         private final Socket socket;
         public syncSendThread(logLoad payload, Socket socket) {
@@ -97,13 +101,12 @@ public class DMSLog {
 
         @Override
         public void run() {
-            System.out.println("[Start Send to] " + socket.toString());
+            logger.info("[Start SyncData] " + socket.toString() + " Table: " + payload.tableName);
             try{
                 ObjectOutputStream sendOut = new ObjectOutputStream(socket.getOutputStream());
                 sendOut.writeObject(payload);
                 sendOut.flush();
-                System.out.println("[SyncData Send Successfully]");
-//                Master.MasterImpl
+                logger.info("[End SyncData] " + payload.tableName);
             } catch (Exception ignored) {
                 try {
                     socket.close();
@@ -121,8 +124,8 @@ public class DMSLog {
         public ServerSocket server;
         public syncRecvThread() {
             try {
-                this.server = new ServerSocket(_LC.network.recvPort);
-                System.out.println("[Start Thread SyncRecv]");
+                this.server = new ServerSocket(_LC.network.socketPort);
+                logger.info("[Start Thread SyncRecv]");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -130,12 +133,12 @@ public class DMSLog {
 
         @Override
         public void run() {
-            System.out.println("[Start Recv Process, Listening] " + server.toString());
+            logger.info("[Start Recv Process, Listening] " + server.toString());
             while(true){
                 Socket recv = null;
                 try{
                     recv = server.accept();
-                    System.out.println("[SyncDB command from] " + recv.getRemoteSocketAddress());
+                    logger.info("[SyncDB command from] " + recv.getRemoteSocketAddress());
                     Thread t = new syncDB(recv);
                     t.start();
                 } catch (Exception ignored) {
@@ -160,18 +163,22 @@ public class DMSLog {
         }
         @Override
         public void run() {
-            System.out.println("[Start syncDB]");
+            logger.info("[Start syncDB]");
             try{
                 ObjectInputStream recvInputStream = new ObjectInputStream(socket.getInputStream());
                 try{
                     logLoad log = (logLoad)recvInputStream.readObject();
                     for(String statement : log.Log)
                         add(log.tableName, statement);
+                    synchronized(this){
+                        logger.info("[Running syncLog]");
+                        // TODO: Run command, wait DB debug finish.
+                        logger.info("[Complete syncLog]");
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                System.out.println("[Complete syncDB]");
-//                testOutput();
+                logger.info("[Complete syncDB]");
             } catch(Exception e){
                 e.printStackTrace();
             }
@@ -187,7 +194,7 @@ public class DMSLog {
      * */
     public synchronized void transfer(String ip, String port, String tableName) {
         logLoad payload = new logLoad(mainLog.get(tableName), tableName, checkPoints.get(tableName));
-        System.out.println("Start Wait");
+        logger.info("[Payload ready, Wait for SyncData]");
         try {
             syncSendThread sender = new syncSendThread(payload, new Socket(ip, Integer.parseInt(port)));
             sender.start();
@@ -199,6 +206,7 @@ public class DMSLog {
      * 用于接收日志，成功将通知master
      * */
     public static synchronized void receive(){
+        // TODO: Callback to Master
 
     }
 

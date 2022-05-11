@@ -2,6 +2,8 @@ package common.zookeeper;
 
 import static org.apache.zookeeper.ZooDefs.Ids.OPEN_ACL_UNSAFE;
 
+import common.meta.ClientInfo;
+import common.meta.ClientInfoFactory;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,8 +41,8 @@ public class ClientMasterImpl implements Client {
     zk = new ZooKeeper(zkHostPort, sessionTimeout, null);
     if (zk.exists("/master", null) == null) {
       // 注册 master
-      zk.create("/master", client.toString().getBytes(), OPEN_ACL_UNSAFE,
-          CreateMode.EPHEMERAL);
+      zk.create("/master", ClientInfoFactory.toString(client).getBytes(),
+          OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
     }
     // 创建 /region_servers 节点
     if (zk.exists("/region_servers", null) == null) {
@@ -122,7 +124,7 @@ public class ClientMasterImpl implements Client {
               continue;
             }
 
-            ClientInfo cl = ClientInfo.from(new String(r))
+            ClientInfo cl = ClientInfoFactory.from(new String(r))
                 .setUid(Integer.parseInt(newClient));
             clients.put(newClient, cl);
 
@@ -154,7 +156,8 @@ public class ClientMasterImpl implements Client {
       }
     });
 
-    masterClient.connect("127.0.0.1:2181", new ClientInfo("1.2.3.4", 1), 3000);
+    masterClient.connect("127.0.0.1:2181", ClientInfoFactory.from("1.2.3.4", 1),
+        3000);
     Thread.sleep(1000000);
   }
 }

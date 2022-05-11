@@ -1,4 +1,5 @@
 package common.zookeeper;
+import common.meta.ClientInfo;
 
 public interface ClientConnectionStrategy {
 
