@@ -75,10 +75,10 @@ public class Region implements Runnable {
                     System.out.println(s);
                 }
             }
-            RegionImpl impl = new RegionImpl();
-            try{
-                impl.requestCopyTable("0.0.0.0:2333", "DMS", false);
-            } catch (Exception ignored) {}
+//            RegionImpl impl = new RegionImpl();
+//            try{
+//                impl.requestCopyTable("0.0.0.0:2333", "DMS", false);
+//            } catch (Exception ignored) {}
 
             synchronized (this) {
                 wait();
