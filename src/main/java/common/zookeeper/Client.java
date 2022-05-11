@@ -2,6 +2,7 @@ package common.zookeeper;
 
 import java.io.IOException;
 import org.apache.zookeeper.KeeperException;
+import common.meta.ClientInfo;
 
 /**
  * 管理 Zookeeper 连接。

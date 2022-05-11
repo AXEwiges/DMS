@@ -2,6 +2,8 @@ package common.zookeeper;
 
 import static org.apache.zookeeper.ZooDefs.Ids.OPEN_ACL_UNSAFE;
 
+import common.meta.ClientInfo;
+import common.meta.ClientInfoFactory;
 import java.io.IOException;
 import java.util.Scanner;
 import java.util.UUID;
@@ -42,13 +44,15 @@ public class ClientRegionServerImpl implements Client {
       }
       throw e;
     }
-    ClientInfo masterClient = ClientInfo.from(new String(r));
+    ClientInfo masterClient = ClientInfoFactory.from(
+        new String(r));
 
     // Create node with unique name
     int uid = UUID.randomUUID().hashCode();
     while (true) {
       try {
-        zk.create("/region_servers/" + uid, clientInfo.toString().getBytes(),
+        zk.create("/region_servers/" + uid,
+            ClientInfoFactory.toString(clientInfo).getBytes(),
             OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
       } catch (KeeperException e) {
         if (e.code() == Code.NODEEXISTS) {
@@ -67,6 +71,7 @@ public class ClientRegionServerImpl implements Client {
 
   /**
    * For testing.
+   *
    * @param args
    */
   public static void main(String[] args)
@@ -74,14 +79,18 @@ public class ClientRegionServerImpl implements Client {
     Client rsClient = new ClientRegionServerImpl();
 
     String host;
-    int port;
+    int rpcPort;
+    int socketPort;
     Scanner scanner = new Scanner(System.in);
     System.out.print("Hostname (won't be used, just for testing): ");
     host = scanner.nextLine();
-    System.out.print("Port (won't be used, just for testing): ");
-    port = Integer.parseInt(scanner.nextLine());
+    System.out.print("RPC Port (won't be used, just for testing): ");
+    rpcPort = Integer.parseInt(scanner.nextLine());
+    System.out.print("RPC Port (won't be used, just for testing): ");
+    socketPort = Integer.parseInt(scanner.nextLine());
 
-    ClientInfo master = rsClient.connect("127.0.0.1:2181", new ClientInfo(host, port), 3000);
+    ClientInfo master = rsClient.connect("127.0.0.1:2181",
+        ClientInfoFactory.from(host, rpcPort, socketPort), 3000);
     System.out.println("Connected to " + master);
     Thread.sleep(1000000);
   }
