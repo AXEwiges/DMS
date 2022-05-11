@@ -24,7 +24,6 @@ class MyExec {
 }
 public class client {
     static final int maxBufferSize = 100;
-    static final int SUCCESS = 1;
     static LinkedHashMap<String, List<ClientInfo>> buffer = new LinkedHashMap<>() {
         @Serial
         private static final long serialVersionUID = 1L;
@@ -282,7 +281,7 @@ public class client {
                 ClientInfo cacheItem = iterator.next();
                 Region.Client region = ThriftClient.getForRegionServer(cacheItem.ip, cacheItem.rpcPort);
                 execResult res = region.statementExec(rawCmd);
-                if (res.status == SUCCESS) {
+                if (res.status != 0) {
                     iterator.remove();
                     exec.result = res.result;
                     if (isCreate) {
