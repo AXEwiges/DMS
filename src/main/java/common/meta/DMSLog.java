@@ -2,8 +2,6 @@ package common.meta;
 
 import config.config;
 import lombok.Data;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -70,8 +68,7 @@ public class DMSLog {
         tempLog = new ConcurrentHashMap<>();
         checkPoints = new ConcurrentHashMap<>();
         monitorThread = new syncRecvThread();
-        BasicConfigurator.configure();
-//System.out.println()
+//        BasicConfigurator.configure();
         monitorThread.start();
     }
     /**

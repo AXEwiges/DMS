@@ -8,6 +8,7 @@ import common.zookeeper.Client;
 import common.zookeeper.ClientRegionServerImpl;
 import config.config;
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.zookeeper.KeeperException;
 import region.db.Interpreter;
@@ -44,6 +45,10 @@ public class Region implements Runnable {
      * 存储在zookeeper的Region的ClientInfo，区分RegionInfo所以暂时如此命名
      */
     private final ClientInfo regionData;
+    /**
+     * log4j依赖
+     * */
+    private Logger log = Logger.getLogger(DMSLog.class);
 
     public Region() throws IOException, InterruptedException, KeeperException {
         //加载配置
@@ -87,7 +92,7 @@ public class Region implements Runnable {
 
     public void run() {
         try {
-            System.out.println("[Region Server Running]");
+            log.info("[Region Server Running] " + _C.metadata.name);
 
             synchronized (this) {
                 wait();
