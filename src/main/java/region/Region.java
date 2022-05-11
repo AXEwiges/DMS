@@ -2,18 +2,15 @@ package region;
 
 import common.meta.DMSLog;
 import common.meta.table;
+import common.zookeeper.Client;
 import common.zookeeper.ClientRegionServerImpl;
 import config.config;
+import master.rpc.ClientInfo;
 import org.apache.thrift.TException;
-import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
 import region.db.Interpreter;
 import region.rpc.Region.Iface;
 import region.rpc.execResult;
-import master.rpc.ClientInfo;
-import com.alibaba.fastjson.JSON;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,14 +18,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
-
-import static org.apache.zookeeper.ZooDefs.Ids.OPEN_ACL_UNSAFE;
-
 public class Region implements Runnable {
     /**
      * 连接Zookeeper集群
      * */
-    private ClientRegionServerImpl zk;
+    private Client regionThrift;
     /**
      * 加载服务器配置信息
      * */
@@ -50,7 +44,9 @@ public class Region implements Runnable {
         this._C = new config();
         _C.loadYaml();
         regionLog = new DMSLog(_C);
-        regionInfo = new ClientInfo(_C.network.ip, _C.network.port, _C.metadata.uid);
+        regionThrift = new ClientRegionServerImpl();
+//        ClientInfo master = regionThrift.connect("127.0.0.1:2181", new ClientInfo(_C.network.ip, _C.network.port), 3000);
+        regionInfo = new ClientInfo(_C.zookeeper.ip, _C.zookeeper.port, _C.metadata.uid);
     }
     /**
      * Connect to the ZooKeeper server.
@@ -96,12 +92,11 @@ public class Region implements Runnable {
         @Override
         public execResult statementExec(String cmd) throws TException {
             execResult res = Interpreter.runSingleCommand(cmd);
-            if(res.type == 2) {
+            if(res.type == 2)
                 tables.add(new table(res.result.split(" ")[1]));
-            }
-            if(res.type == 3) {
+            if(res.type == 3)
                 tables.remove(new table(res.result.split(" ")[1]));
-            }
+
             return res;
         }
 
@@ -110,10 +105,6 @@ public class Region implements Runnable {
             String[] address = destination.split(":");
             regionLog.transfer(address[0], address[1], tableName);
             return true;
-        }
-        @Override
-        public void copyTable() throws TException {
-
         }
     }
 
