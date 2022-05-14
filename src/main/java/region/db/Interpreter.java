@@ -319,6 +319,8 @@ public class Interpreter {
 
         Table table = new Table(tableName, primaryName, attrVec); // create table
         API.create_table(tableName, table);
+        /*For testing*/
+        System.out.println(1);
         return new execResult(1, "Create table " + tableName + " successfully" + "\n", 2);
     }
 

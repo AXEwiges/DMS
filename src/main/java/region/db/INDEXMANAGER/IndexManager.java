@@ -122,7 +122,7 @@ public class IndexManager {
     }
 
     public static void initial_index() throws IOException {
-        String fileName = "index_catalog";
+        String fileName = "./src/main/java/region/db/DBFiles/index_catalog";
         File file = new File(fileName);
         if (!file.exists()) return;
         FileInputStream fis = new FileInputStream(file);

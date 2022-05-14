@@ -9,8 +9,8 @@ public class CatalogManager {
 
     private static LinkedHashMap<String, Table> tables = new LinkedHashMap<>();
     private static LinkedHashMap<String, Index> indexes = new LinkedHashMap<>();
-    private static String tableFilename = "table_catalog";
-    private static String indexFilename = "index_catalog";
+    private static String tableFilename = "./src/main/java/region/db/DBFiles/table_catalog";
+    private static String indexFilename = "./src/main/java/region/db/DBFiles/index_catalog";
 
     public static void initial_catalog() throws IOException {
         initial_table();
