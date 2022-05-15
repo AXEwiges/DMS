@@ -42,9 +42,10 @@ public class Master {
                     for (Integer uid : regionsToTables.keySet()) {
                         if (uid == clientInfo.uid) continue;
                         String source_ip = regionsInfomation.get(uid).ip;
+                        int source_port = regionsInfomation.get(uid).rpcPort;
                         if (tables.size() >= avg) break;
                         try {
-                            Region.Client client = ThriftClient.getForRegionServer(source_ip, 5099);
+                            Region.Client client = ThriftClient.getForRegionServer(source_ip, source_port);
                             if (regionsToTables.get(uid).size() > avg) {
                                 for (int j = 0; j < regionsToTables.get(uid).size() - avg; j++) {
                                     String tableName = regionsToTables.get(uid).get(0);
@@ -76,7 +77,8 @@ public class Master {
                 for (String tableName : list) {
                     Integer source_uid = tablesToRegions.get(tableName).get(0);
                     String source_ip = regionsInfomation.get(source_uid).ip;
-                    Region.Client client = ThriftClient.getForRegionServer(source_ip, 5099);
+                    int source_port = regionsInfomation.get(source_uid).rpcPort;
+                    Region.Client client = ThriftClient.getForRegionServer(source_ip, source_port);
                     List<Integer> uids = findNMinRegion(1, tablesToRegions.get(tableName));
                     tablesToRegions.get(tableName).remove(clientInfo.uid);
                     Integer des_uid = uids.get(0);
@@ -105,7 +107,7 @@ public class Master {
             Iface handler = new MasterImpl();
             master.rpc.Master.Processor<Iface> processor = new master.rpc.Master.Processor<>(
                     handler);
-            ThriftServer server = new ThriftServer(processor, 5099);
+            ThriftServer server = new ThriftServer(processor, 9090);
             server.startServer();
             Thread.sleep(1000000);
         } catch (Exception e) {
@@ -193,7 +195,7 @@ public class Master {
     public static void main(String[] args)
             throws IOException, InterruptedException, KeeperException, TTransportException {
         Client masterClient = new ClientMasterImpl(new MasterConnectionStrategy());
-        masterClient.connect("127.0.0.1:2181", ClientInfoFactory.from("1.2.3.4", 1),
+        masterClient.connect("127.0.0.1:2181", ClientInfoFactory.from("127.0.0.1", 9090),
                 3000);
         Thread t1 = new Thread(() -> {
             try {

@@ -1,8 +1,12 @@
 package master;
 
-import master.rpc.Master;
 import common.meta.ClientInfo;
-import java.util.*;
+import master.rpc.Master;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * @author: minghao
@@ -21,37 +25,40 @@ public class MasterImpl implements Master.Iface {
     @Override
     public List<ClientInfo> getRegionsOfTable(String tableName, boolean isCreate, boolean isDrop) {
         List<Integer> regions;
-        if(isCreate) {
-            regions = master.Master.findNMinRegion(3, new ArrayList<>());
+        if (isCreate) {
+            int n = master.Master.regionsInfomation.size();
+            if (n < 3) regions = master.Master.findNMinRegion(n, new ArrayList<>());
+            else
+                regions = master.Master.findNMinRegion(3, new ArrayList<>());
             master.Master.tablesToRegions.put(tableName, regions);
-            for(Integer i:regions) {
+            for (Integer i : regions) {
                 List<String> tables = master.Master.regionsToTables.get(i);
                 tables.add(tableName);
             }
-        }
-        else {
+        } else {
             regions = master.Master.tablesToRegions.get(tableName);
-            if(isDrop) {
-                for(Integer i:regions) {
+            if (isDrop) {
+                for (Integer i : regions) {
                     List<String> tables = master.Master.regionsToTables.get(i);
                     tables.remove(tableName);
                 }
             }
         }
         List<ClientInfo> regionsINFO = new ArrayList<>();
-        for(Integer i:regions) {
+        for (Integer i : regions) {
             master.Master.timesOfVisit.replace(i, master.Master.timesOfVisit.get(i) + 1);
             regionsINFO.add(master.Master.regionsInfomation.get(i));
         }
-        if(isDrop)
+        if (isDrop)
             master.Master.tablesToRegions.remove(tableName);
         return regionsINFO;
     }
 
     /**
      * 这个函数用于在region完成表的复制操作时被调用
+     *
      * @param tableName 表名
-     * @param uid 表被复制到的region's uid
+     * @param uid       表被复制到的region's uid
      */
     @Override
     public void finishCopyTable(String tableName, int uid) {
@@ -68,6 +75,7 @@ public class MasterImpl implements Master.Iface {
 
     /**
      * for testing
+     *
      * @param args
      */
     public static void main(String[] args) {
@@ -76,7 +84,7 @@ public class MasterImpl implements Master.Iface {
         int uid = 1;
         int rpcPort = 1;
         int socketPort = 100;
-        for(int i = 0; i < 10; i++) {
+        for (int i = 0; i < 10; i++) {
             String ip = uid + ".2.3.4";
             ClientInfo client = new ClientInfo(ip, rpcPort, socketPort, uid);
             masterConnectionStrategy.onConnect(client);
@@ -85,8 +93,8 @@ public class MasterImpl implements Master.Iface {
             socketPort++;
 //            print();
         }
-        for(int i = 0 ; i < 20; i++) {
-            System.out.println(m.getRegionsOfTable(i+"表", true, false));
+        for (int i = 0; i < 20; i++) {
+            System.out.println(m.getRegionsOfTable(i + "表", true, false));
 //            print();
         }
 //        for(int i = 0 ; i < 5; i++) {
@@ -101,7 +109,7 @@ public class MasterImpl implements Master.Iface {
 //        ClientInfo client = new ClientInfo("1.2.3.4", 1, 100, 1);
 //        masterConnectionStrategy.onDisconnect(client);
 //        print();
-        master.Master.timesOfVisit.replace(1,101);
+        master.Master.timesOfVisit.replace(1, 101);
         print();
         Timer timer = new Timer();
         //执行时间，时间单位为毫秒，不得小于等于0

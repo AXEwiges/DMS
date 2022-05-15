@@ -45,8 +45,8 @@ public class ThriftClient {
   }
 
   public static void main(String[] args) throws TException {
-    var client = ThriftClient.getForMaster("127.0.0.1", 5099);
-    client.getRegionsOfTable("test", false, false);
-    client.finishCopyTable("test", 0);
+    var client = ThriftClient.getForMaster("127.0.0.1", 9090);
+    System.out.println(client.getRegionsOfTable("test", true, false));
+//    client.finishCopyTable("test", 0);
   }
 }
