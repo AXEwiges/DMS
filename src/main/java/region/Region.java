@@ -111,7 +111,7 @@ public class Region implements Runnable {
 
 //        _CA.network.rpcPort = 2020;
 //        _CA.network.socketPort = 2021;
-        _CA.metadata.name = "Test sajdiasj";
+//        _CA.metadata.name = "Test sajdiasj";
 
         Region A = new Region(_CA);
 
