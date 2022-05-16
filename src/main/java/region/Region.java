@@ -109,9 +109,9 @@ public class Region implements Runnable {
         config _CA = new config();
         _CA.loadYaml();
 
-        _CA.network.rpcPort = 2020;
-        _CA.network.socketPort = 2021;
-        _CA.metadata.name = "Test RegionServer A";
+//        _CA.network.rpcPort = 2020;
+//        _CA.network.socketPort = 2021;
+        _CA.metadata.name = "Test sajdiasj";
 
         Region A = new Region(_CA);
 

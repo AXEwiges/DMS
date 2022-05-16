@@ -36,7 +36,7 @@ public class client {
             System.out.println("欢迎来到分布式数据库。");
             System.out.println("请输入SQL指令。支持分行，以\";\"结束。");
             Scanner scan = new Scanner(System.in);
-            Master.Client master = ThriftClient.getForMaster("127.0.0.1", 3306);
+            Master.Client master = ThriftClient.getForMaster("127.0.0.1", 9090);
             StringBuilder rawCmd;
             do {
                 rawCmd = new StringBuilder();
@@ -77,7 +77,7 @@ public class client {
                         e.printStackTrace();
                     }
                 } else {
-                    System.out.println(rawCmd);
+//                    System.out.println(rawCmd);
                     handleCmd(rawCmd.toString(), master);
                 }
             } while (!rawCmd.toString().toUpperCase().startsWith("EXIT") && !rawCmd.toString().toUpperCase().startsWith("QUIT"));
@@ -298,6 +298,7 @@ public class client {
                         buffer.remove(tableName);
                     }
                 }
+                exec.result = res.result;
             }
         } catch (Exception e) {
             e.printStackTrace();
