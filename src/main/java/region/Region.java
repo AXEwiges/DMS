@@ -139,56 +139,61 @@ public class Region implements Runnable {
     }
 
     public void run() {
-        try {
-            System.out.println("[Region Server Running] " + _C.metadata.name);
-            Thread z = new Thread(() -> {
-                try {
-                    startThriftServer();
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            });
-            z.start();
-            Thread t = new Thread(() -> timer.schedule(new TimerTask() {
-                public void run() {
+        Thread z = new Thread(() -> {
+            try {
+                startThriftServer();
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+        Thread t = new Thread(() -> timer.schedule(new TimerTask() {
+            public void run() {
 //                    System.out.println("[Timed Check Log]");
-                    boolean temp;
-                    for (Map.Entry<String, List<String>> m : regionLog.mainLog.entrySet()) {
-                        temp = false;
-                        for (table i : tables) {
-                            if (Objects.equals(m.getKey(), i.name)) {
-                                temp = true;
-                                break;
-                            }
+                boolean temp;
+                for (Map.Entry<String, List<String>> m : regionLog.mainLog.entrySet()) {
+                    temp = false;
+                    for (table i : tables) {
+                        if (Objects.equals(m.getKey(), i.name)) {
+                            temp = true;
+                            break;
                         }
-                        if (!temp) {
-                            DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
-                            System.out.println("[Flash new Log] " + m.getKey());
-                            System.out.println("[All new Log] " + m.getValue());
-                            for (String s : m.getValue()) {
-                                try {
-                                    RI.syncExec(s, m.getKey());
-                                } catch (TException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            }
-                            regionLog.testOutput();
+                    }
+                    if (!temp) {
+                        DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
+                        System.out.println("[Flash new Log] " + m.getKey());
+                        System.out.println("[All new Log] " + m.getValue());
+                        for (String s : m.getValue()) {
                             try {
-                                Master.Client master = ThriftClient.getForMaster("127.0.0.1", 9090);
-                                master.finishCopyTable(m.getKey(), _C.metadata.uid);
+                                RI.syncExec(s, m.getKey());
                             } catch (TException e) {
                                 throw new RuntimeException(e);
                             }
                         }
+                        regionLog.testOutput();
+                        try {
+                            Master.Client master = ThriftClient.getForMaster("127.0.0.1", 9090);
+                            master.finishCopyTable(m.getKey(), _C.metadata.uid);
+                        } catch (TException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }
-            }, 1000, 2000));
+            }
+        }, 1000, 2000));
+        try {
+            System.out.println("[Region Server Running] " + _C.metadata.name);
+
+            z.start();
             t.start();
+
             synchronized (this) {
                 wait();
             }
         } catch (InterruptedException e) {
+            regionLog.stopService();
+            z.interrupt();
+            t.interrupt();
             e.printStackTrace();
         }
     }

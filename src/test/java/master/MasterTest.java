@@ -92,7 +92,6 @@ class MasterTest {
                 for(int i = 0;i < 5;i++) {
                     if(configs.get(i).network.rpcPort == I.rpcPort){
                         regionThreads.get(i).interrupt();
-                        break;
                     }
                 }
             } catch (TException e) {
