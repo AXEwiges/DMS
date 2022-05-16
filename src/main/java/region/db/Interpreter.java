@@ -618,7 +618,8 @@ class Utils {
             if (attrName.length() > len) len = attrName.length();
             v.add(len);
             String format = "|%-" + len + "s";
-            res_val.append(format).append(attrName).append("\n");
+            String temp = String.format("|%-" + len + "s", attrName);
+            res_val.append(temp);
             cnt = cnt + len + 1;
         }
         cnt++;
@@ -629,7 +630,8 @@ class Utils {
             TableRow row = tab.get(i);
             for (int j = 0; j < attrSize; j++) {
                 String format = "|%-" + v.get(j) + "s";
-                res_val.append(format).append(row.get_attribute_value(j)).append("\n");
+                String temp = String.format(format, row.get_attribute_value(j));
+                res_val.append(temp);
             }
             res_val.append("|\n");
         }

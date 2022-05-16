@@ -120,11 +120,11 @@ class RegionTest {
             System.out.println("[Test UID] " + uuid);
 
             Map<String, String> testCMD = new LinkedHashMap<String, String>(){{
-                put("create table " + "TEST_" + uuid + " (ID int, Name char(32), email char(255), primary key(ID))", "Create table " + "TEST_" + uuid + " successfully\n");
-                put("insert into " +"TEST_" + uuid + " values (123, 'CMD', 'TEST@gmail.com')", "Insert successfully\n");
-                put("create table " + "TEST_" + uuid + "_1" + " (ID int, Name char(32), email char(255), primary key(ID))", "Create table " + "TEST_" + uuid + "_1" + " successfully\n");
-                put("insert into " + "TEST_" + uuid + "_1" + " values (123, 'CMD', 'TEST@gmail.com')", "Insert successfully\n");
-                put("select * from " + "TEST_" + uuid, "");
+                put("create table " + "TEST_" + uuid + " (ID int, Name char(32), email char(255), primary key(ID));", "Create table " + "TEST_" + uuid + " successfully\n");
+                put("insert into " +"TEST_" + uuid + " values (123, 'CMD', 'TEST@gmail.com');", "Insert successfully\n");
+                put("create table " + "TEST_" + uuid + "_1" + " (ID int, Name char(32), email char(255), primary key(ID));", "Create table " + "TEST_" + uuid + "_1" + " successfully\n");
+                put("insert into " + "TEST_" + uuid + "_1" + " values (123, 'CMD', 'TEST@gmail.com');", "Insert successfully\n");
+                put("select * from " + "TEST_" + uuid + ";", "");
             }};
 
             for(Map.Entry<String, String> statement : testCMD.entrySet()) {
@@ -141,7 +141,7 @@ class RegionTest {
 
             System.out.println("[Transport Result] " + result);
 
-            execResult execRes = A.RI.statementExec("show tables", "TEST_" + uuid);
+            execResult execRes = A.RI.statementExec("show tables", "TEST_" + uuid + ";");
 
             System.out.println("[Show Result] " + execRes);
 
