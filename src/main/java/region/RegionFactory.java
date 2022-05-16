@@ -5,7 +5,6 @@ import config.config;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ThreadPoolExecutor;
 
 public class RegionFactory {
     public List<config> regionServerConfigFactory(int num) {

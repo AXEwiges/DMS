@@ -9,7 +9,6 @@ import common.zookeeper.Client;
 import common.zookeeper.ClientRegionServerImpl;
 import config.config;
 import lombok.Data;
-import master.Master;
 import master.MasterImpl;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
@@ -17,7 +16,6 @@ import region.db.DMSDB;
 import region.db.Interpreter;
 import region.rpc.Region.Iface;
 import region.rpc.execResult;
-import region.rpc.Region.Iface;
 
 import java.io.File;
 import java.io.IOException;
@@ -215,7 +213,7 @@ public class Region implements Runnable {
             return result;
         }
 
-        public execResult syncExec(String cmd, String tableName) throws TException {
+        public void syncExec(String cmd, String tableName) throws TException {
             DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
 
             execResult res = interpreter.runSingleCommand(cmd);
@@ -228,7 +226,6 @@ public class Region implements Runnable {
                 System.out.println("[SUCCESS SYNC STATE] " + res);
             }
 
-            return res;
         }
 
         @Override

@@ -174,6 +174,8 @@ public class Interpreter {
 //        }
 
         //after get the whole statement
+        index = state.indexOf(";");
+        state = state.substring(0, index);
         String result = state.toString().trim().replaceAll("\\s+", " ");
         String[] tokens = result.split(" ");
 
