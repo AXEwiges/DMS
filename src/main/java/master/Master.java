@@ -218,6 +218,7 @@ public class Master {
                     @Override
                     public void run() {
                         System.out.println("检查是否超载");
+                        MasterImpl.print();
                         Master.reset();
                     }
                 }, delay, cacheTime);

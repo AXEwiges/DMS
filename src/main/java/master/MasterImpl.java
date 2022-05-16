@@ -26,7 +26,7 @@ public class MasterImpl implements Master.Iface {
     public List<ClientInfo> getRegionsOfTable(String tableName, boolean isCreate, boolean isDrop) {
         List<Integer> regions;
         if (isCreate) {
-            if(master.Master.tablesToRegions.contains(tableName)) return new ArrayList<>();
+            if(master.Master.tablesToRegions.containsKey(tableName)) return new ArrayList<>();
             int n = master.Master.regionsInfomation.size();
             if (n < 3) regions = master.Master.findNMinRegion(n, new ArrayList<>());
             else
@@ -37,7 +37,7 @@ public class MasterImpl implements Master.Iface {
                 tables.add(tableName);
             }
         } else {
-            if(!master.Master.tablesToRegions.contains(tableName)) return new ArrayList<>();
+            if(!master.Master.tablesToRegions.containsKey(tableName)) return new ArrayList<>();
             regions = master.Master.tablesToRegions.get(tableName);
             if (isDrop) {
                 for (Integer i : regions) {
