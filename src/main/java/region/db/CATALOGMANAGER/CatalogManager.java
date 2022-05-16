@@ -5,7 +5,7 @@ import region.db.INDEXMANAGER.Index;
 import java.io.*;
 import java.util.*;
 
-import static region.db.DMSDB.storageSpace;
+import static region.db.DMSDB.DBDIR;
 
 public class CatalogManager {
 
@@ -389,7 +389,7 @@ public class CatalogManager {
             System.err.println(e);
             try{
                 System.out.println("[????]");
-                File file = new File(storageSpace + "log.txt");
+                File file = new File(DBDIR.storageSpace + "log.txt");
                 PrintStream stream = null;
                 stream = new PrintStream(file);
                 e.printStackTrace(stream);

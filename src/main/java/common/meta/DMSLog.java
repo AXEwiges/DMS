@@ -79,6 +79,7 @@ public class DMSLog {
      * @param statement 语句
      * */
     public void add(String tableName, String statement){
+        System.out.println("[Add new statement] " + _LC.metadata.name + " " + statement);
         if(!mainLog.containsKey(tableName)){
             mainLog.put(tableName, new ArrayList<>());
             checkPoints.put(tableName, 0);
@@ -86,6 +87,7 @@ public class DMSLog {
         mainLog.get(tableName).add(statement);
         Integer integer = checkPoints.get(tableName) + 1;
         checkPoints.put(tableName, integer);
+        System.out.println("[All in statement] " + mainLog.get(tableName));
     }
     /**
      * @author AXEwiges
@@ -169,11 +171,10 @@ public class DMSLog {
                 ObjectInputStream recvInputStream = new ObjectInputStream(socket.getInputStream());
                 try{
                     logLoad log = (logLoad)recvInputStream.readObject();
-                    for(String statement : log.Log)
-                        add(log.tableName, statement);
                     synchronized(this){
                         System.out.println("[Running syncLog]");
-
+                        for(String statement : log.Log)
+                            add(log.tableName, statement);
                         System.out.println("[Complete syncLog]");
                     }
                 } catch (Exception e) {

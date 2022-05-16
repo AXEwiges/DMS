@@ -8,7 +8,7 @@ import java.io.*;
 import java.util.LinkedHashMap;
 import java.util.Vector;
 
-import static region.db.DMSDB.storageSpace;
+import static region.db.DMSDB.DBDIR;
 
 
 public class IndexManager {
@@ -127,7 +127,6 @@ public class IndexManager {
         String fileName = "./src/main/java/region/db/DBFiles/index_catalog";
         File file = new File(fileName);
         if (!file.exists()){
-            System.out.println("NNNNNNNNNNNN");
             return;
         }
         FileInputStream fis = new FileInputStream(file);
@@ -149,7 +148,7 @@ public class IndexManager {
         String fileName = idx.indexName + ".index";
         build_index(idx);
         //把idx的信息写入到硬盘中
-        File file = new File(storageSpace + fileName);
+        File file = new File(DBDIR.storageSpace + fileName);
         FileOutputStream fos = new FileOutputStream(file);
         DataOutputStream dos = new DataOutputStream(fos);
         dos.writeUTF(idx.indexName);
@@ -163,7 +162,7 @@ public class IndexManager {
 
     public static boolean drop_index(Index idx) {
         String filename = idx.indexName + ".index";
-        File file = new File(storageSpace + filename);
+        File file = new File(DBDIR.storageSpace + filename);
         if (file.exists()) file.delete();
         int index = CatalogManager.get_attribute_index(idx.tableName, idx.attributeName);
         NumType type = NumType.valueOf(CatalogManager.get_type(idx.tableName, index));

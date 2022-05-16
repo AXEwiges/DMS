@@ -3,7 +3,7 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
 
-import static region.db.DMSDB.storageSpace;
+import static region.db.DMSDB.DBDIR;
 
 public class BufferManager {
 
@@ -48,7 +48,7 @@ public class BufferManager {
         for (i = 0; i < MAXBLOCKNUM; i++)  //find the target block
             if (buffer[i].valid() && buffer[i].get_filename().equals(filename)
                     && buffer[i].get_block_offset() == ofs) return i;
-        File file = new File(storageSpace + filename); //block does not found
+        File file = new File(DBDIR.storageSpace + filename); //block does not found
         int bid = get_free_block_id();
         try {
             if (bid == EOF) return EOF; //there are no free blocks
@@ -69,7 +69,7 @@ public class BufferManager {
         if (i < MAXBLOCKNUM) {  //there exist a block
             return buffer[i];
         } else { //block does not found
-            File file = new File(storageSpace + filename);
+            File file = new File(DBDIR.storageSpace + filename);
             int bid = get_free_block_id();
             if (bid == EOF || !file.exists()) return null; //there are no free blocks
             if (!read_block_from_disk(filename, ofs, bid)) return null;
@@ -82,7 +82,7 @@ public class BufferManager {
         byte[] data = new byte[Block.BLOCKSIZE];  //temporary data
         RandomAccessFile raf = null;  //to seek the position for data to write
         try {
-            File in = new File(storageSpace + filename);
+            File in = new File(DBDIR.storageSpace + filename);
             raf = new RandomAccessFile(in, "rw");
             if ((ofs + 1) * Block.BLOCKSIZE <= raf.length()) {  //if the block is in valid position
                 raf.seek(ofs * Block.BLOCKSIZE);
@@ -117,7 +117,7 @@ public class BufferManager {
         }
         RandomAccessFile raf = null;  //to seek the position for data to write
         try {
-            File out = new File(storageSpace + buffer[bid].get_filename());
+            File out = new File(DBDIR.storageSpace + buffer[bid].get_filename());
             raf = new RandomAccessFile(out, "rw");
             if (!out.exists()) out.createNewFile();  //if file does not exist
             raf.seek(buffer[bid].get_block_offset() * Block.BLOCKSIZE);

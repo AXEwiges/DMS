@@ -1,20 +1,24 @@
 package region;
 
-import common.meta.*;
+import common.meta.ClientInfo;
+import common.meta.ClientInfoFactory;
+import common.meta.DMSLog;
+import common.meta.table;
 import common.zookeeper.Client;
 import common.zookeeper.ClientRegionServerImpl;
 import config.config;
 import lombok.Data;
 import master.MasterImpl;
-import master.rpc.Master;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.zookeeper.KeeperException;
+import region.db.DMSDB;
 import region.db.Interpreter;
 import region.rpc.Region.Iface;
 import region.rpc.execResult;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
@@ -87,24 +91,29 @@ public class Region implements Runnable {
         //
         RI = new RegionImpl();
         //
+        DMSDB x = new DMSDB("E:\\SQL\\DMS\\src\\main\\java\\region\\db\\DBFiles\\" + _C.metadata.name + "\\");
+        DMSDB.changeDIR("E:\\SQL\\DMS\\src\\main\\java\\region\\db\\DBFiles\\" + _C.metadata.name + "\\");
+        File A = new File(DMSDB.DBDIR.storageSpace);
+        if(!A.isDirectory()) A.mkdir();
+        //
         interpreter = new Interpreter();
         //
         BasicConfigurator.configure();
     }
 
     public static void main(String[] args) throws InterruptedException, IOException, KeeperException {
-        System.out.println("Input the name of the region server: ");
-        Scanner scanner = new Scanner(System.in);
-        String name = scanner.nextLine();
+//        System.out.println("Input the name of the region server: ");
+//        Scanner scanner = new Scanner(System.in);
+//        String name = scanner.nextLine();
     }
 
     public void run() {
         try {
             System.out.println("[Region Server Running] " + _C.metadata.name);
-            timer.schedule(new TimerTask() {
+            Thread t = new Thread(() -> timer.schedule(new TimerTask() {
                 public void run() {
-                    System.out.println("[Check Log]");
-                    boolean temp = true;
+                    System.out.println("[Timed Check Log]");
+                    boolean temp;
                     for(Map.Entry<String, List<String>> m : regionLog.mainLog.entrySet()){
                         temp = false;
                         for(table i : tables){
@@ -114,19 +123,24 @@ public class Region implements Runnable {
                             }
                         }
                         if(!temp){
+                            DMSDB.changeDIR("E:\\SQL\\DMS\\src\\main\\java\\region\\db\\DBFiles\\" + _C.metadata.name + "\\");
+                            System.out.println("[Flash new Log] " + m.getKey());
+                            System.out.println("[All new Log] " + m.getValue());
                             for(String s : m.getValue()){
                                 try {
-                                    RI.statementExec(s, m.getKey());
+                                    RI.syncExec(s, m.getKey());
                                 } catch (TException e) {
                                     throw new RuntimeException(e);
                                 }
                             }
+                            regionLog.testOutput();
                             MasterImpl MI = new MasterImpl();
                             MI.finishCopyTable(m.getKey(), _C.metadata.uid);
                         }
                     }
                 }
-            }, 1000, 2000);
+            }, 100, 2000));
+            t.start();
             synchronized (this) {
                 wait();
             }
@@ -138,13 +152,14 @@ public class Region implements Runnable {
     public class RegionImpl implements Iface {
         @Override
         public execResult statementExec(String cmd, String tableName) throws TException {
+            DMSDB.changeDIR("E:\\SQL\\DMS\\src\\main\\java\\region\\db\\DBFiles\\" + _C.metadata.name + "\\");
             execResult res = interpreter.runSingleCommand(cmd);
             if(res.type == 2)
                 tables.add(new table(tableName));
             if(res.type == 3)
                 tables.remove(new table(tableName));
             if(res.status == 1){
-                System.out.println("[SUCCESS STATE]");
+                System.out.println("[SUCCESS STATE] " + res);
                 regionLog.add(tableName, cmd);
             }
 
@@ -153,8 +168,23 @@ public class Region implements Runnable {
 
         @Override
         public boolean requestCopyTable(String destination, String tableName, boolean isMove) throws TException {
+            DMSDB.changeDIR("E:\\SQL\\DMS\\src\\main\\java\\region\\db\\DBFiles\\" + _C.metadata.name + "\\");
             String[] address = destination.split(":");
             return regionLog.transfer(address[0], address[1], tableName);
+        }
+
+        public execResult syncExec(String cmd, String tableName) throws TException {
+            DMSDB.changeDIR("E:\\SQL\\DMS\\src\\main\\java\\region\\db\\DBFiles\\" + _C.metadata.name + "\\");
+            execResult res = interpreter.runSingleCommand(cmd);
+            if(res.type == 2)
+                tables.add(new table(tableName));
+            if(res.type == 3)
+                tables.remove(new table(tableName));
+            if(res.status == 1){
+                System.out.println("[SUCCESS STATE] " + res);
+            }
+
+            return res;
         }
 
         @Override

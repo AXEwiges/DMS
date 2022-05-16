@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import region.rpc.execResult;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputFilter;
 import java.util.LinkedHashMap;
@@ -69,6 +70,26 @@ class RegionTest {
         }
     }
 
+    void delFile(File file) {
+        if (!file.exists())
+            return;
+
+        if (file.isDirectory()) {
+            File[] files = file.listFiles();
+            assert files != null;
+            for (File f : files)
+                delFile(f);
+        }
+        boolean A = file.delete();
+    }
+
+    void clearPath() {
+        String Root = "E:\\SQL\\DMS\\src\\main\\java\\region\\db\\DBFiles\\";
+        File DBPATH = new File(Root);
+        delFile(new File(Root));
+        boolean R = DBPATH.mkdir();
+    }
+
     @Test
     void statementExecTest() {
         config _CA = new config();
@@ -84,6 +105,8 @@ class RegionTest {
         _CB.network.rpcPort = 2022;
         _CB.network.socketPort = 2023;
         _CB.metadata.name = "Test RegionServer B";
+
+        clearPath();
 
         try{
             Region A = new Region(_CA);
@@ -125,6 +148,8 @@ class RegionTest {
             System.out.println("[Show Result] " + execRes);
 
             A.regionLog.testOutput();
+
+            TA.join();
 
         } catch (Exception e) {
             e.printStackTrace();
