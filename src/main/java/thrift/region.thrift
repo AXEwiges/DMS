@@ -9,7 +9,9 @@ struct execResult {
 
 service Region {
     /*执行某个语句，返回成功与否*/
-    execResult statementExec(1:string cmd),
+    execResult statementExec(1:string cmd, 2:string tableName),
     /*命令某服务器将某表向另一个服务器拷贝，参数为: 目的地址，表名，是否为迁移/单纯复制*/
     bool requestCopyTable(1:string destination, 2:string tableName, 3:bool isMove),
+    /*执行拷贝，备用函数，暂时不移除*/
+    bool copyTable(1:string destination, 2:string tableName)
 }

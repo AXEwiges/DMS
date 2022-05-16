@@ -23,11 +23,13 @@ class logLoad implements Serializable {
     public List<String> Log;
     public String tableName;
     public Integer checkPoint;
+    public Integer Type;
 
-    public logLoad(List<String> strings, String name, Integer integer) {
+    public logLoad(List<String> strings, String name, Integer integer, Integer type) {
         Log = strings;
         tableName = name;
         checkPoint = integer;
+        Type = type;
     }
 }
 
@@ -171,7 +173,7 @@ public class DMSLog {
                         add(log.tableName, statement);
                     synchronized(this){
                         System.out.println("[Running syncLog]");
-                        // TODO: Run command, wait DB debug finish.
+
                         System.out.println("[Complete syncLog]");
                     }
                 } catch (Exception e) {
@@ -192,7 +194,7 @@ public class DMSLog {
      * @param tableName 表名
      * */
     public synchronized boolean transfer(String ip, String port, String tableName) {
-        logLoad payload = new logLoad(mainLog.get(tableName), tableName, checkPoints.get(tableName));
+        logLoad payload = new logLoad(mainLog.get(tableName), tableName, checkPoints.get(tableName), 0);
         System.out.println("[Payload ready, Wait for SyncData]");
         try {
             syncSendThread sender = new syncSendThread(payload, new Socket(ip, Integer.parseInt(port)));

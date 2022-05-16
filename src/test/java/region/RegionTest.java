@@ -6,9 +6,15 @@ import org.apache.zookeeper.KeeperException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import region.rpc.execResult;
 
 import java.io.IOException;
 import java.io.ObjectInputFilter;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -55,7 +61,72 @@ class RegionTest {
 
             System.out.println("[Test Result] " + result);
             A.regionLog.testOutput();
+
         } catch (InterruptedException | KeeperException | TException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    void statementExecTest() {
+        config _CA = new config();
+        _CA.loadYaml();
+
+        _CA.network.rpcPort = 2020;
+        _CA.network.socketPort = 2021;
+        _CA.metadata.name = "Test RegionServer A";
+
+        config _CB = new config();
+        _CB.loadYaml();
+
+        _CB.network.rpcPort = 2022;
+        _CB.network.socketPort = 2023;
+        _CB.metadata.name = "Test RegionServer B";
+
+        try{
+            Region A = new Region(_CA);
+            Region B = new Region(_CB);
+
+            Thread TA = new Thread(A);
+            Thread TB = new Thread(B);
+
+            TA.start();
+            TB.start();
+
+            UUID uuid = UUID.randomUUID();
+
+            System.out.println("[Test UID] " + uuid);
+
+            Map<String, String> testCMD = new LinkedHashMap<String, String>(){{
+                put("create table " + "TEST_" + uuid + " (ID int, Name char(32), email char(255), primary key(ID))", "Create table " + "TEST_" + uuid + " successfully\n");
+                put("insert into " +"TEST_" + uuid + " values (123, 'CMD', 'TEST@gmail.com')", "Insert successfully\n");
+                put("create table " + "TEST_" + uuid + "_1" + " (ID int, Name char(32), email char(255), primary key(ID))", "Create table " + "TEST_" + uuid + "_1" + " successfully\n");
+                put("insert into " +"TEST_" + uuid + "_1" + " values (123, 'CMD', 'TEST@gmail.com')", "Insert successfully\n");
+            }};
+
+            for(Map.Entry<String, String> statement : testCMD.entrySet()) {
+                System.out.println("[Test Statement] " + statement.getKey());
+                execResult execRes = B.RI.statementExec(statement.getKey(), "TEST_" + uuid);
+                if (Objects.equals(execRes.result, statement.getValue())){
+                    System.out.println("[Statement Test Successful] " + execRes);
+                }
+                else
+                    System.out.println("[Statement Test Failed] " + execRes);
+            }
+
+            boolean result = B.RI.requestCopyTable("127.0.0.1:" + _CA.network.socketPort, "TEST_" + uuid, true);
+
+            System.out.println("[Transport Result] " + result);
+
+            execResult execRes = A.RI.statementExec("show tables", "TEST_" + uuid);
+
+            System.out.println("[Show Result] " + execRes);
+
+            A.regionLog.testOutput();
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

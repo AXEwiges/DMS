@@ -1,12 +1,12 @@
 package region;
 
-import common.meta.ClientInfo;
-import common.meta.ClientInfoFactory;
-import common.meta.DMSLog;
-import common.meta.table;
+import common.meta.*;
 import common.zookeeper.Client;
 import common.zookeeper.ClientRegionServerImpl;
 import config.config;
+import lombok.Data;
+import master.MasterImpl;
+import master.rpc.Master;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
@@ -16,9 +16,10 @@ import region.rpc.Region.Iface;
 import region.rpc.execResult;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.net.Socket;
+import java.util.*;
 
 public class Region implements Runnable {
     /**
@@ -48,9 +49,16 @@ public class Region implements Runnable {
     /**
      * log4j依赖
      * */
-    private Logger log = Logger.getLogger(DMSLog.class);
-
-    public Region() throws IOException, InterruptedException, KeeperException {
+    private final Logger log = Logger.getLogger(DMSLog.class);
+    /**
+     * Region自己的Interpreter
+     * */
+    private final Interpreter interpreter;
+    /**
+     * 定时触发
+     * */
+    Timer timer = new Timer();
+    public Region() throws Exception {
         //加载配置
         this._C = new config();
         _C.loadYaml();
@@ -62,10 +70,12 @@ public class Region implements Runnable {
                 ClientInfoFactory.from(_C.zookeeper.ip, _C.network.rpcPort, _C.network.socketPort), _C.network.timeOut);
         //暴露接口
         RI = new RegionImpl();
-
+        //
+        interpreter = new Interpreter();
+        //
     }
 
-    public Region(config _C) throws IOException, InterruptedException, KeeperException {
+    public Region(config _C) throws Exception {
         //加载配置
         this._C = _C;
         //启动接收子线程
@@ -77,6 +87,8 @@ public class Region implements Runnable {
         //
         RI = new RegionImpl();
         //
+        interpreter = new Interpreter();
+        //
         BasicConfigurator.configure();
     }
 
@@ -84,16 +96,37 @@ public class Region implements Runnable {
         System.out.println("Input the name of the region server: ");
         Scanner scanner = new Scanner(System.in);
         String name = scanner.nextLine();
-//        Region rs = new Region();
-//        rs.regionLog.add("DMS", "insert 5");
-//        System.out.println("Put");
-//        rs.run();
     }
 
     public void run() {
         try {
             log.info("[Region Server Running] " + _C.metadata.name);
-
+            timer.schedule(new TimerTask() {
+                public void run() {
+                    System.out.println("[Check Log]");
+                    boolean temp = true;
+                    for(Map.Entry<String, List<String>> m : regionLog.mainLog.entrySet()){
+                        temp = false;
+                        for(table i : tables){
+                            if (Objects.equals(m.getKey(), i.name)) {
+                                temp = true;
+                                break;
+                            }
+                        }
+                        if(!temp){
+                            for(String s : m.getValue()){
+                                try {
+                                    RI.statementExec(s, m.getKey());
+                                } catch (TException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                            MasterImpl MI = new MasterImpl();
+                            MI.finishCopyTable(m.getKey(), _C.metadata.uid);
+                        }
+                    }
+                }
+            }, 1000, 2000);
             synchronized (this) {
                 wait();
             }
@@ -104,12 +137,16 @@ public class Region implements Runnable {
 
     public class RegionImpl implements Iface {
         @Override
-        public execResult statementExec(String cmd) throws TException {
-            execResult res = Interpreter.runSingleCommand(cmd);
+        public execResult statementExec(String cmd, String tableName) throws TException {
+            execResult res = interpreter.runSingleCommand(cmd);
             if(res.type == 2)
-                tables.add(new table(res.result.split(" ")[1]));
+                tables.add(new table(tableName));
             if(res.type == 3)
-                tables.remove(new table(res.result.split(" ")[1]));
+                tables.remove(new table(tableName));
+            if(res.status == 1){
+                System.out.println("[SUCCESS STATE]");
+                regionLog.add(tableName, cmd);
+            }
 
             return res;
         }
@@ -119,5 +156,55 @@ public class Region implements Runnable {
             String[] address = destination.split(":");
             return regionLog.transfer(address[0], address[1], tableName);
         }
+
+        @Override
+        public boolean copyTable(String destination, String tableName) throws IOException, InterruptedException {
+            String[] address = destination.split(":");
+            copyCommand t = new copyCommand(new Socket(address[0], Integer.parseInt(address[1])), tableName);
+            Thread waiter = new Thread(t);
+            waiter.start();
+            waiter.join();
+            return true;
+        }
+        @Data
+        class logLoad implements Serializable {
+            public List<String> Log;
+            public String tableName;
+            public Integer checkPoint;
+            public Integer Type;
+
+            public logLoad(List<String> strings, String name, Integer integer, Integer type) {
+                Log = strings;
+                tableName = name;
+                checkPoint = integer;
+                Type = type;
+            }
+        }
+        class copyCommand extends Thread {
+            private final Socket socket;
+            private final logLoad logload;
+            public copyCommand(Socket socket, String tableName) {
+                this.socket = socket;
+                this.logload = new logLoad(null, tableName, null, 1);
+            }
+
+            @Override
+            public void run() {
+                System.out.println("[Send Copy Command] " + socket.toString() + " Table: " + logload.tableName);
+                try{
+                    ObjectOutputStream sendOut = new ObjectOutputStream(socket.getOutputStream());
+                    sendOut.writeObject(logload);
+                    sendOut.flush();
+                    System.out.println("[End Copy Command] " + logload.tableName);
+                } catch (Exception ignored) {
+                    try {
+                        socket.close();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }
+
     }
 }

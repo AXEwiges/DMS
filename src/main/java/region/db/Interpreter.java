@@ -12,6 +12,7 @@ import region.db.RECORDMANAGER.TableRow;
 import region.rpc.execResult;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,21 +22,26 @@ public class Interpreter {
     private static boolean nestLock = false; //not permit to use nesting sql file execution
     private static int execFile = 0;
 
+    public API api;
+
+    public Interpreter() throws Exception {
+        api = new API();
+    }
     public static void main(String[] args) {
-        try {
-            API.initial();
-            System.out.println("Welcome to minisql~");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            interpret(reader);
-        } catch (IOException e) {
-            System.out.println("101 Run time error : IO exception occurs");
-        } catch (Exception e) {
-            System.out.println("Default error: " + e.getMessage());
-        }
+//        try {
+//            API.initial();
+//            System.out.println("Welcome to minisql~");
+//            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+//            interpret(reader);
+//        } catch (IOException e) {
+//            System.out.println("101 Run time error : IO exception occurs");
+//        } catch (Exception e) {
+//            System.out.println("Default error: " + e.getMessage());
+//        }
 
     }
 
-    private static void interpret(BufferedReader reader) throws IOException {
+    private void interpret(BufferedReader reader) throws IOException {
         String restState = ""; //rest statement after ';' in last line
 
         while (true) { //read for each statement
@@ -137,43 +143,47 @@ public class Interpreter {
         }
     }
 
-    public static execResult runSingleCommand(String state) {
+    public execResult runSingleCommand(String state) {
         String restState = ""; //rest statement after ';' in last line
 
         int index;
-        String line;
-        StringBuilder statement = new StringBuilder();
-        statement.append(restState); //add rest line
-        statement.append(" ");
-        if (execFile == 0)
-            System.out.print("MiniSQL-->");
+//        String line;
+//        StringBuilder statement = new StringBuilder();
+//        statement.append(restState); //add rest line
+//        statement.append(" ");
+//        if (execFile == 0)
+//            System.out.print("MiniSQL-->");
 //                System.out.print("-->");
-        while (true) {  //read whole statement until ';'
-            line = state;
-            if (line == null) { //read the file tail
-                return new execResult(0, "Null statement input." + "\n", 0);
-            } else if (line.contains(";")) { //last line
-                index = line.indexOf(";");
-                statement.append(line.substring(0, index));
-                restState = line.substring(index + 1); //set reset statement
-                break;
-
-            } else {
-                statement.append(line);
-                statement.append(" ");
-                if (execFile == 0)
-                    System.out.print("MiniSQL-->");
-//                        System.out.print("-->"); //next line
-            }
-        }
+//        while (true) {  //read whole statement until ';'
+//            line = state;
+//            if (line == null) { //read the file tail
+//                return new execResult(0, "Null statement input." + "\n", 0);
+//            } else if (line.contains(";")) { //last line
+//                index = line.indexOf(";");
+//                statement.append(line.substring(0, index));
+//                restState = line.substring(index + 1); //set reset statement
+//                break;
+//
+//            } else {
+//                statement.append(line);
+//                statement.append(" ");
+//                if (execFile == 0)
+//                    System.out.print("MiniSQL-->");
+////                        System.out.print("-->"); //next line
+//            }
+//        }
 
         //after get the whole statement
-        String result = statement.toString().trim().replaceAll("\\s+", " ");
+        String result = state.toString().trim().replaceAll("\\s+", " ");
         String[] tokens = result.split(" ");
 
         try {
-            if (tokens.length == 1 && tokens[0].equals(""))
+            if (tokens.length == 1 && tokens[0].equals("")){
+                System.out.println("result");
+                System.out.println(Arrays.toString(tokens));
                 return new execResult(0,"No statement specified" + "\n", 0);
+            }
+
             switch (tokens[0]) { //match keyword
                 case "create":
                     if (tokens.length == 1)
@@ -222,7 +232,7 @@ public class Interpreter {
         } else return new execResult(0,  "Can not find valid key word after 'show'!" + "\n", 0);
     }
 
-    private static execResult parse_create_table(String statement) throws Exception {
+    private execResult parse_create_table(String statement) throws Exception {
         statement = statement.replaceAll(" *\\( *", " (").replaceAll(" *\\) *", ") ");
         statement = statement.replaceAll(" *, *", ",");
         statement = statement.trim();
@@ -318,13 +328,13 @@ public class Interpreter {
             return new execResult(0,  "Not specified primary key in table " + tableName + "\n", 0);
 
         Table table = new Table(tableName, primaryName, attrVec); // create table
-        API.create_table(tableName, table);
+        api.create_table(tableName, table);
         /*For testing*/
-        System.out.println(1);
+//        System.out.println(1);
         return new execResult(1, "Create table " + tableName + " successfully" + "\n", 2);
     }
 
-    private static execResult parse_drop_table(String statement) throws Exception {
+    private execResult parse_drop_table(String statement) throws Exception {
         String[] tokens = statement.split(" ");
         if (tokens.length == 2)
             return new execResult(0,  "Not specify table name" + "\n", 0);
@@ -332,11 +342,11 @@ public class Interpreter {
             return new execResult(0,  "Extra parameters in drop table" + "\n", 0);
 
         String tableName = tokens[2]; //get table name
-        API.drop_table(tableName);
+        api.drop_table(tableName);
         return new execResult(1, "Drop table " + tableName + " successfully" + "\n", 3);
     }
 
-    private static execResult parse_create_index(String statement) throws Exception {
+    private execResult parse_create_index(String statement) throws Exception {
         statement = statement.replaceAll("\\s+", " ");
         statement = statement.replaceAll(" *\\( *", " (").replaceAll(" *\\) *", ") ");
         statement = statement.trim();
@@ -366,11 +376,11 @@ public class Interpreter {
             return new execResult(1,  "Not a unique attribute" + "\n", 1);
 
         Index index = new Index(indexName, tableName, attrName);
-        API.create_index(index);
+        api.create_index(index);
         return new execResult(1, "Create index " + indexName + " successfully" + "\n", 1);
     }
 
-    private static execResult parse_drop_index(String statement) throws Exception {
+    private execResult parse_drop_index(String statement) throws Exception {
         String[] tokens = statement.split(" ");
         if (tokens.length == 2)
             return new execResult(0,  "Not specify index name" + "\n", 0);
@@ -378,11 +388,11 @@ public class Interpreter {
             return new execResult(0,  "Extra parameters in drop index" + "\n", 0);
 
         String indexName = tokens[2]; //get table name
-        API.drop_index(indexName);
+        api.drop_index(indexName);
         return new execResult(1, "Drop index " + indexName + " successfully" + "\n", 1);
     }
 
-    private static execResult parse_select(String statement) throws Exception {
+    private execResult parse_select(String statement) throws Exception {
         //select ... from ... where ...
         String attrStr = Utils.substring(statement, "select ", " from");
         String tabStr = Utils.substring(statement, "from ", " where");
@@ -397,7 +407,7 @@ public class Interpreter {
             //select all attributes
             if (tabStr.equals("")) {  // select * from [];
                 tabStr = Utils.substring(statement, "from ", "");
-                Vector<TableRow> ret = API.select(tabStr, new Vector<>(), new Vector<>());
+                Vector<TableRow> ret = api.select(tabStr, new Vector<>(), new Vector<>());
                 endTime = System.currentTimeMillis();
                 double usedTime = (endTime - startTime) / 1000.0;
                 return new execResult(1, "Successful, Finished in " + usedTime + "s" + "\n" + Utils.print_rows(ret, tabStr) + "\n", 1);
@@ -405,7 +415,7 @@ public class Interpreter {
                 String[] conSet = conStr.split(" *and *");
                 //get condition vector
                 conditions = Utils.create_conditon(conSet);
-                Vector<TableRow> ret = API.select(tabStr, new Vector<>(), conditions);
+                Vector<TableRow> ret = api.select(tabStr, new Vector<>(), conditions);
                 endTime = System.currentTimeMillis();
                 double usedTime = (endTime - startTime) / 1000.0;
                 return new execResult(1, "Successful, Finished in " + usedTime + "s" + "\n" + Utils.print_rows(ret, tabStr) + "\n", 1);
@@ -414,7 +424,7 @@ public class Interpreter {
             attrNames = Utils.convert(attrStr.split(" *, *")); //get attributes list
             if (tabStr.equals("")) {  //select [attr] from [];
                 tabStr = Utils.substring(statement, "from ", "");
-                Vector<TableRow> ret = API.select(tabStr, attrNames, new Vector<>());
+                Vector<TableRow> ret = api.select(tabStr, attrNames, new Vector<>());
                 endTime = System.currentTimeMillis();
                 double usedTime = (endTime - startTime) / 1000.0;
                 return new execResult(1, "Successful, Finished in " + usedTime + "s" + "\n" + Utils.print_rows(ret, tabStr) + "\n", 1);
@@ -422,7 +432,7 @@ public class Interpreter {
                 String[] conSet = conStr.split(" *and *");
                 //get condition vector
                 conditions = Utils.create_conditon(conSet);
-                Vector<TableRow> ret = API.select(tabStr, attrNames, conditions);
+                Vector<TableRow> ret = api.select(tabStr, attrNames, conditions);
                 endTime = System.currentTimeMillis();
                 double usedTime = (endTime - startTime) / 1000.0;
                 return new execResult(1, "Successful, Finished in " + usedTime + "s" + "\n" + Utils.print_rows(ret, tabStr) + "\n", 1);
@@ -430,7 +440,7 @@ public class Interpreter {
         }
     }
 
-    private static execResult parse_insert(String statement) throws Exception {
+    private execResult parse_insert(String statement) throws Exception {
         statement = statement.replaceAll(" *\\( *", " (").replaceAll(" *\\) *", ") ");
         statement = statement.replaceAll(" *, *", ",");
         statement = statement.trim();
@@ -479,7 +489,7 @@ public class Interpreter {
 
         //Check unique attributes
         if (tableRow.get_attribute_size() != CatalogManager.get_attribute_num(tableName))
-            return new execResult(1,  "Attribute number doesn't match" + "\n", 1);
+            return new execResult(0,  "Attribute number doesn't match" + "\n", 1);
         Vector<Attribute> attributes = CatalogManager.get_table(tableName).attributeVector;
         for (int i = 0; i < attributes.size(); i++) {
             Attribute attr = attributes.get(i);
@@ -496,15 +506,15 @@ public class Interpreter {
                     if (res.isEmpty())
                         continue;
                 }
-                return new execResult(1,  "Duplicate unique key: " + attr.attributeName + "\n", 1);
+                return new execResult(0,  "Duplicate unique key: " + attr.attributeName + "\n", 1);
             }
         }
 
-        API.insert_row(tableName, tableRow);
+        api.insert_row(tableName, tableRow);
         return new execResult(1, "Insert successfully" + "\n", 1);
     }
 
-    private static execResult parse_delete(String statement) throws Exception {
+    private execResult parse_delete(String statement) throws Exception {
         //delete from [tabName] where []
         int num;
         String tabStr = Utils.substring(statement, "from ", " where").trim();
@@ -513,29 +523,29 @@ public class Interpreter {
         Vector<String> attrNames;
         if (tabStr.equals("")) {  //delete from ...
             tabStr = Utils.substring(statement, "from ", "").trim();
-            num = API.delete_row(tabStr, new Vector<>());
+            num = api.delete_row(tabStr, new Vector<>());
             return new execResult(1, "Query ok! " + num + " row(s) are deleted\n", 1);
         } else {  //delete from ... where ...
             String[] conSet = conStr.split(" *and *");
             //get condition vector
             conditions = Utils.create_conditon(conSet);
-            num = API.delete_row(tabStr, conditions);
+            num = api.delete_row(tabStr, conditions);
             return new execResult(1, "Query ok! " + num + " row(s) are deleted\n", 1);
         }
     }
 
-    private static void parse_quit(String statement, BufferedReader reader) throws Exception {
+    private void parse_quit(String statement, BufferedReader reader) throws Exception {
         String[] tokens = statement.split(" ");
         if (tokens.length != 1)
             throw new QException(0, 1001, "Extra parameters in quit");
 
-        API.store();
+        api.store();
         reader.close();
         System.out.println("Bye");
         System.exit(0);
     }
 
-    private static execResult parse_sql_file(String statement) throws Exception {
+    private execResult parse_sql_file(String statement) throws Exception {
         execFile++;
         String[] tokens = statement.split(" ");
         if (tokens.length != 2)

@@ -12,12 +12,15 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Vector;
+import region.db.DMSDB.*;
+
+import static region.db.DMSDB.storageSpace;
 
 public class RecordManager {
 
     //create a file for new table, return true if success, otherwise return false
     public static boolean create_table(String tableName) throws Exception{
-        File file =new File(tableName);
+        File file =new File(storageSpace + tableName);
         if (!file.createNewFile()) //file already exists
             throw new NullPointerException();
         Block block = BufferManager.read_block_from_disk_quote(tableName, 0); //read first block from file
@@ -31,7 +34,7 @@ public class RecordManager {
 
     //delete the file of given table, return true if success, otherwise return false
     public static boolean drop_table(String tableName) throws Exception {
-        File file =new File(tableName);
+        File file =new File(storageSpace + tableName);
         if(file.delete()) { //delete the file
             BufferManager.make_invalid(tableName); // set the block invalid
             return true;

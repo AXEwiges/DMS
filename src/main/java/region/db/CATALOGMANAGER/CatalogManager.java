@@ -5,6 +5,8 @@ import region.db.INDEXMANAGER.Index;
 import java.io.*;
 import java.util.*;
 
+import static region.db.DMSDB.storageSpace;
+
 public class CatalogManager {
 
     private static LinkedHashMap<String, Table> tables = new LinkedHashMap<>();
@@ -375,10 +377,29 @@ public class CatalogManager {
     }
 
     public static boolean create_index(Index newIndex) throws NullPointerException{
-        Table tmpTable = get_table(newIndex.tableName);
-        tmpTable.indexVector.addElement(newIndex);
-        tmpTable.indexNum = tmpTable.indexVector.size();
-        indexes.put(newIndex.indexName, newIndex);
+        System.out.println("ENTER");
+        try{
+            Table tmpTable = get_table(newIndex.tableName);
+            tmpTable.indexVector.addElement(newIndex);
+            tmpTable.indexNum = tmpTable.indexVector.size();
+            indexes.put(newIndex.indexName, newIndex);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+            System.err.println(e);
+            try{
+                System.out.println("[????]");
+                File file = new File(storageSpace + "log.txt");
+                PrintStream stream = null;
+                stream = new PrintStream(file);
+                e.printStackTrace(stream);
+            }
+            catch(Exception ex){
+                System.out.println("[jijijiji]");
+                ex.printStackTrace();
+            }
+        }
+
         return true;
     }
 

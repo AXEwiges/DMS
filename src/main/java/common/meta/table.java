@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 public class table {
-    public static String name;
+    public String name;
 
     public table(){}
     public table(String s) {
