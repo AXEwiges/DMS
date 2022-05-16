@@ -195,6 +195,7 @@ public class client {
                     List<ClientInfo> regions;
                     if ((regions = buffer.get(tableName)) == null) {
                         regions = master.getRegionsOfTable(tableName, isCreate, isDrop);
+                        System.out.println(regions);
                         buffer.put(tableName, regions);
                     }
                     MyExec exec = execute(tableName, regions, isCreate, isDrop, rawCmd);
@@ -228,6 +229,7 @@ public class client {
                     List<ClientInfo> regions;
                     if ((regions = buffer.get(tableName)) == null) {
                         regions = master.getRegionsOfTable(tableName, isCreate, isDrop);
+                        System.out.println(regions);
                         buffer.put(tableName, regions);
                     }
                     MyExec exec = execute(tableName, regions, isCreate, isDrop, rawCmd);
@@ -281,7 +283,7 @@ public class client {
     public static MyExec execute(String tableName, List<ClientInfo> regions, boolean isCreate, boolean isDrop, String rawCmd) {
         MyExec exec = new MyExec();
         try {
-            exec.failed = regions;
+            exec.failed = new ArrayList<>(regions);
             Iterator<ClientInfo> iterator = exec.failed.iterator();
             while (iterator.hasNext()) {
                 /* 在这里访问Region子节点 */
