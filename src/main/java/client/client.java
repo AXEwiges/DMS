@@ -77,7 +77,7 @@ public class client {
                         e.printStackTrace();
                     }
                 } else {
-                    System.out.println(rawCmd);
+//                    System.out.println(rawCmd);
                     handleCmd(rawCmd.toString(), master);
                 }
             } while (!rawCmd.toString().toUpperCase().startsWith("EXIT") && !rawCmd.toString().toUpperCase().startsWith("QUIT"));
@@ -298,6 +298,7 @@ public class client {
                         buffer.remove(tableName);
                     }
                 }
+                exec.result = res.result;
             }
         } catch (Exception e) {
             e.printStackTrace();
