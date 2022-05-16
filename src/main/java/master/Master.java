@@ -47,12 +47,16 @@ public class Master {
                         try {
                             Region.Client client = ThriftClient.getForRegionServer(source_ip, source_port);
                             if (regionsToTables.get(uid).size() > avg) {
-                                for (int j = 0; j < regionsToTables.get(uid).size() - avg; j++) {
-                                    String tableName = regionsToTables.get(uid).get(0);
+                                int size = regionsToTables.get(uid).size();
+                                for (int j = 0, i = 0; i < regionsToTables.get(uid).size() && j < size - avg; ) {
+                                    String tableName = regionsToTables.get(uid).get(i);
                                     if (!tables.contains(tableName)) {
-                                        regionsToTables.get(uid).remove(0);
+                                        regionsToTables.get(uid).remove(i);
                                         tablesToRegions.get(tableName).remove(Integer.valueOf(uid));
                                         client.requestCopyTable(clientInfo.ip + ":" + clientInfo.socketPort, tableName, true);
+                                        j++;
+                                    } else {
+                                        i++;
                                     }
                                     if (tables.size() >= avg) break;
                                 }
@@ -77,21 +81,21 @@ public class Master {
                 for (String tableName : list) {
                     int i = 0;
                     int source_uid;
-                    do{
+                    do {
                         source_uid = tablesToRegions.get(tableName).get(i);
                         i++;
-                    } while(source_uid == clientInfo.uid && i < tablesToRegions.get(tableName).size());
+                    } while (source_uid == clientInfo.uid && i < tablesToRegions.get(tableName).size());
                     System.out.println(source_uid);
                     String source_ip = regionsInfomation.get(source_uid).ip;
                     int source_port = regionsInfomation.get(source_uid).rpcPort;
                     Region.Client client = ThriftClient.getForRegionServer(source_ip, source_port);
                     List<Integer> uids = findNMinRegion(1, tablesToRegions.get(tableName));
-                    if(uids.isEmpty()) continue;
+                    if (uids.isEmpty()) continue;
                     tablesToRegions.get(tableName).remove(Integer.valueOf(clientInfo.uid));
                     Integer des_uid = uids.get(0);
                     String des_ip = regionsInfomation.get(des_uid).ip;
                     int des_port = regionsInfomation.get(des_uid).socketPort;
-                    client.requestCopyTable(des_ip+":"+des_port, tableName, false);
+                    client.requestCopyTable(des_ip + ":" + des_port, tableName, false);
                     /*
                     测试finishCopyTable函数
                      */
@@ -152,7 +156,7 @@ public class Master {
                         int des_uid = l.get(0);
                         ClientInfo des = regionsInfomation.get(des_uid);
                         tablesToRegions.get(tableName).remove(Integer.valueOf(source_uid));
-                        client.requestCopyTable(des.ip+":"+des.socketPort, tableName, true);
+                        client.requestCopyTable(des.ip + ":" + des.socketPort, tableName, true);
                         /*
                             测试finishCopyTable函数
                         */

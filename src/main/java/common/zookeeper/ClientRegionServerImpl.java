@@ -65,6 +65,7 @@ public class ClientRegionServerImpl implements Client {
       break;
     }
 
+    masterClient.setUid(uid);
     connected = true;
     return masterClient.setUid(uid);
   }
