@@ -208,7 +208,7 @@ public class Region implements Runnable {
             DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
             String[] address = destination.split(":");
             boolean result = regionLog.transfer(address[0], address[1], tableName);
-            if(isMove)
+            if (isMove)
                 regionLog.remove(tableName);
             return result;
         }

@@ -9,7 +9,7 @@ import java.util.UUID;
 public class RegionFactory {
     public List<config> regionServerConfigFactory(int num) {
         List<config> configs = new ArrayList<>();
-        for(int i = 0;i < num;i++){
+        for (int i = 0; i < num; i++) {
             UUID uuid = UUID.randomUUID();
             config _A = new config();
             _A.loadYaml();
