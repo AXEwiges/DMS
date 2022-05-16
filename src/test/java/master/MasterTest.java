@@ -75,12 +75,15 @@ class MasterTest {
                 tableCreate.add("create table " + testTables.get(i) + " (ID int, Name" + i + " char(32), email char(255), primary key(ID));");
             }
 
+            System.out.println("[C P]");
+
             try {
                 Master.Client master = ThriftClient.getForMaster("127.0.0.1", 9090);
                 List<ClientInfo> thisTurn = master.getRegionsOfTable("Test Table 1", true, false);
 
                 for(ClientInfo I : thisTurn) {
                     region.rpc.Region.Client region = ThriftClient.getForRegionServer(I.ip, I.rpcPort);
+                    System.out.println(tableCreate.get(0));
                     execResult res = region.statementExec(tableCreate.get(0), testTables.get(0));
                     System.out.println(res);
                 }

@@ -71,12 +71,15 @@ public class Region implements Runnable {
         //加载配置
         this._C = new config();
         _C.loadYaml();
-        //启动接收子线程
-        regionLog = new DMSLog(_C);
         //连接zookeeper
         regionThrift = new ClientRegionServerImpl();
         regionData = regionThrift.connect("127.0.0.1:2181",
                 ClientInfoFactory.from(_C.zookeeper.ip, _C.network.rpcPort, _C.network.socketPort), _C.network.timeOut);
+        //设定UID
+        _C.metadata.uid = regionData.uid;
+        System.out.println("[Zookeeper Setting] UID: " + _C.metadata.uid);
+        //启动接收子线程
+        regionLog = new DMSLog(_C);
         //暴露接口
         RI = new RegionImpl();
         //实例化数据库必要变量
@@ -91,12 +94,15 @@ public class Region implements Runnable {
     public Region(config _C) throws Exception {
         //加载配置
         this._C = _C;
-        //启动接收子线程
-        regionLog = new DMSLog(_C);
         //连接zookeeper
         regionThrift = new ClientRegionServerImpl();
         regionData = regionThrift.connect("127.0.0.1:2181",
                 ClientInfoFactory.from(_C.zookeeper.ip, _C.network.rpcPort, _C.network.socketPort), _C.network.timeOut);
+        //设定UID
+        _C.metadata.uid = regionData.uid;
+        System.out.println("[Zookeeper Setting] UID: " + _C.metadata.uid);
+        //启动接收子线程
+        regionLog = new DMSLog(_C);
         //
         RI = new RegionImpl();
         //实例化数据库必要变量
