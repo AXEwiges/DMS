@@ -58,6 +58,7 @@ public class Master {
                                     } else {
                                         i++;
                                     }
+                                    Thread.sleep(1000);
                                     if (tables.size() >= avg) break;
                                 }
                             }
