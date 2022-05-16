@@ -278,7 +278,7 @@ public class client {
                 /* 在这里访问Region子节点 */
                 ClientInfo cacheItem = iterator.next();
                 Region.Client region = ThriftClient.getForRegionServer(cacheItem.ip, cacheItem.rpcPort);
-                execResult res = region.statementExec(rawCmd);
+                execResult res = region.statementExec(rawCmd, tableName);
                 if (res.status != 0) {
                     iterator.remove();
                     exec.result = res.result;

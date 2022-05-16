@@ -100,7 +100,7 @@ public class Region implements Runnable {
 
     public void run() {
         try {
-            log.info("[Region Server Running] " + _C.metadata.name);
+            System.out.println("[Region Server Running] " + _C.metadata.name);
             timer.schedule(new TimerTask() {
                 public void run() {
                     System.out.println("[Check Log]");
