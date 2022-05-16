@@ -4,10 +4,12 @@ import common.meta.ClientInfo;
 import common.meta.ClientInfoFactory;
 import common.meta.DMSLog;
 import common.meta.table;
+import common.rpc.ThriftServer;
 import common.zookeeper.Client;
 import common.zookeeper.ClientRegionServerImpl;
 import config.config;
 import lombok.Data;
+import master.Master;
 import master.MasterImpl;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
@@ -15,6 +17,7 @@ import region.db.DMSDB;
 import region.db.Interpreter;
 import region.rpc.Region.Iface;
 import region.rpc.execResult;
+import region.rpc.Region.Iface;
 
 import java.io.File;
 import java.io.IOException;
@@ -118,9 +121,32 @@ public class Region implements Runnable {
 
         TA.start();
     }
+
+    public void startThriftServer() {
+        try {
+            region.rpc.Region.Iface handler = new RegionImpl();
+            region.rpc.Region.Processor<Iface> processor = new region.rpc.Region.Processor<>(
+                    handler);
+            ThriftServer server = new ThriftServer(processor, _C.zookeeper.port);
+            server.startServer();
+            Thread.sleep(1000000);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void run() {
         try {
             System.out.println("[Region Server Running] " + _C.metadata.name);
+            Thread z = new Thread(() -> {
+                try {
+                    startThriftServer();
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            });
+            z.start();
             Thread t = new Thread(() -> timer.schedule(new TimerTask() {
                 public void run() {
                     System.out.println("[Timed Check Log]");
