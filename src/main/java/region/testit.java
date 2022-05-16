@@ -1,36 +1,20 @@
-package master;
+package region;
 
 import common.meta.ClientInfo;
 import common.rpc.ThriftClient;
-import common.zookeeper.Client;
 import config.config;
 import master.rpc.Master;
 import org.apache.thrift.TException;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import region.Region;
-import region.RegionFactory;
 import region.rpc.execResult;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static region.Utils.DBFiles;
 
-class MasterTest {
-    @BeforeEach
-    void setUp() {
-        System.out.println("Start Test");
-    }
-
-    @AfterEach
-    void tearDown() {
-        System.out.println("End Test");
-    }
-
-    void delFile(File file) {
+public class testit {
+    static void delFile(File file) {
         if (!file.exists())
             return;
 
@@ -43,14 +27,13 @@ class MasterTest {
         boolean A = file.delete();
     }
 
-    void clearPath() {
+    static void clearPath() {
         File DBPATH = new File(DBFiles);
         delFile(DBPATH);
         boolean R = DBPATH.mkdir();
     }
 
-    @Test
-    void testLoadBalancing() {
+    public static void main(String[] args) {
         RegionFactory regionFactory = new RegionFactory();
         List<config> configs = regionFactory.regionServerConfigFactory(5);
 

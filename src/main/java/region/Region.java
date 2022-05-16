@@ -152,7 +152,7 @@ public class Region implements Runnable {
             z.start();
             Thread t = new Thread(() -> timer.schedule(new TimerTask() {
                 public void run() {
-                    System.out.println("[Timed Check Log]");
+//                    System.out.println("[Timed Check Log]");
                     boolean temp;
                     for (Map.Entry<String, List<String>> m : regionLog.mainLog.entrySet()) {
                         temp = false;
