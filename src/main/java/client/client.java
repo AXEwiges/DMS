@@ -33,13 +33,16 @@ public class client {
 
     public static void main(String[] args) {
         try {
+            System.out.println("欢迎来到分布式数据库。");
+            System.out.println("请输入SQL指令。支持分行，以\";\"结束。");
             Scanner scan = new Scanner(System.in);
-            Master.Client master = ThriftClient.getForMaster("127.0.0.1", 9090);
+            Master.Client master = ThriftClient.getForMaster("127.0.0.1", 3306);
             StringBuilder rawCmd;
             do {
                 rawCmd = new StringBuilder();
                 String nLine;
                 do {
+                    System.out.print("DDB>>");
                     nLine = scan.nextLine();
                     rawCmd.append(" ").append(nLine);
                 } while (nLine.indexOf(';') == -1);
@@ -107,6 +110,7 @@ public class client {
                 if (!exec.failed.isEmpty()) {
                     /* 在这里进行错误处理 */
                 }
+                System.out.println(exec.result);
             }
             //        else if(CMD.startsWith("DROP TABLE")) {
             else if (CMD.matches("^DROP +TABLE[\\s\\S]*")) {
@@ -131,6 +135,7 @@ public class client {
                 if (!exec.failed.isEmpty()) {
                     /* 在这里进行错误处理 */
                 }
+                System.out.println(exec.result);
             } else {
                 boolean isCreate = false;
                 boolean isDrop = false;
@@ -167,6 +172,7 @@ public class client {
                     if (!exec.failed.isEmpty()) {
                         /* 在这里进行错误处理 */
                     }
+                    System.out.println(exec.result);
                 }
                 //            else if(CMD.startsWith("DROP INDEX")) {
                 else if (CMD.matches("^DROP +INDEX[\\s\\S]*")) {
@@ -195,6 +201,7 @@ public class client {
                     if (!exec.failed.isEmpty()) {
                         /* 在这里进行错误处理 */
                     }
+                    System.out.println(exec.result);
                 } else if (CMD.startsWith("SELECT")) {
                     int beginIndex = 6;
                     while (rawCmd.charAt(beginIndex) == ' ') {
@@ -227,6 +234,7 @@ public class client {
                     if (!exec.failed.isEmpty()) {
                         /* 在这里进行错误处理 */
                     }
+                    System.out.println(exec.result);
                 } else if (CMD.startsWith("DELETE")) {
                     int beginIndex = 6;
                     while (rawCmd.charAt(beginIndex) == ' ') {
@@ -261,6 +269,7 @@ public class client {
                     if (!exec.failed.isEmpty()) {
                         /* 在这里进行错误处理 */
                     }
+                    System.out.println(exec.result);
                 }
             }
         } catch (Exception e) {
