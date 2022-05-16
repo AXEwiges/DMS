@@ -53,6 +53,7 @@ public class MasterImpl implements Master.Iface {
         }
         if (isDrop)
             master.Master.tablesToRegions.remove(tableName);
+        System.out.println(regionsINFO);
         return regionsINFO;
     }
 
