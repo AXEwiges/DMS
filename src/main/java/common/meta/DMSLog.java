@@ -209,11 +209,11 @@ public class DMSLog {
         }
     }
     /**
-     * 用于接收日志，成功将通知master
+     * 用于移动日志
      * */
-    public static synchronized void receive(){
-        // TODO: Callback to Master
-
+    public synchronized void remove(String tableName){
+        mainLog.remove(tableName);
+        checkPoints.remove(tableName);
     }
 
     public void testOutput(){

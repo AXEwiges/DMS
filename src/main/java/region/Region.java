@@ -9,10 +9,8 @@ import common.zookeeper.ClientRegionServerImpl;
 import config.config;
 import lombok.Data;
 import master.MasterImpl;
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
-import org.apache.zookeeper.KeeperException;
 import region.db.DMSDB;
 import region.db.Interpreter;
 import region.rpc.Region.Iface;
@@ -28,6 +26,22 @@ import java.util.*;
 import static region.Utils.DBFiles;
 
 public class Region implements Runnable {
+    /**
+     * 连接Zookeeper集群
+     */
+    private final Client regionThrift;
+    /**
+     * 存储在zookeeper的Region的ClientInfo，区分RegionInfo所以暂时如此命名
+     */
+    private final ClientInfo regionData;
+    /**
+     * log4j依赖
+     */
+    private final Logger log = Logger.getLogger(DMSLog.class);
+    /**
+     * Region自己的Interpreter
+     */
+    private final Interpreter interpreter;
     /**
      * 加载服务器配置信息
      */
@@ -45,25 +59,10 @@ public class Region implements Runnable {
      */
     public RegionImpl RI;
     /**
-     * 连接Zookeeper集群
-     */
-    private final Client regionThrift;
-    /**
-     * 存储在zookeeper的Region的ClientInfo，区分RegionInfo所以暂时如此命名
-     */
-    private final ClientInfo regionData;
-    /**
-     * log4j依赖
-     * */
-    private final Logger log = Logger.getLogger(DMSLog.class);
-    /**
-     * Region自己的Interpreter
-     * */
-    private final Interpreter interpreter;
-    /**
      * 定时触发
-     * */
+     */
     Timer timer = new Timer();
+
     public Region() throws Exception {
         //加载配置
         this._C = new config();
@@ -76,9 +75,13 @@ public class Region implements Runnable {
                 ClientInfoFactory.from(_C.zookeeper.ip, _C.network.rpcPort, _C.network.socketPort), _C.network.timeOut);
         //暴露接口
         RI = new RegionImpl();
-        //
+        //实例化数据库必要变量
+        DMSDB x = new DMSDB(DBFiles + _C.metadata.name + "\\");
+        DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
+        File A = new File(DMSDB.DBDIR.storageSpace);
+        if (!A.isDirectory()) A.mkdir();
+        //定义独立interpreter
         interpreter = new Interpreter();
-        //
     }
 
     public Region(config _C) throws Exception {
@@ -92,23 +95,29 @@ public class Region implements Runnable {
                 ClientInfoFactory.from(_C.zookeeper.ip, _C.network.rpcPort, _C.network.socketPort), _C.network.timeOut);
         //
         RI = new RegionImpl();
-        //
+        //实例化数据库必要变量
         DMSDB x = new DMSDB(DBFiles + _C.metadata.name + "\\");
         DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
         File A = new File(DMSDB.DBDIR.storageSpace);
-        if(!A.isDirectory()) A.mkdir();
-        //
+        if (!A.isDirectory()) A.mkdir();
+        //定义独立interpreter
         interpreter = new Interpreter();
-        //
-        BasicConfigurator.configure();
     }
 
-    public static void main(String[] args) throws InterruptedException, IOException, KeeperException {
-//        System.out.println("Input the name of the region server: ");
-//        Scanner scanner = new Scanner(System.in);
-//        String name = scanner.nextLine();
-    }
+    public static void main(String[] args) throws Exception {
+        config _CA = new config();
+        _CA.loadYaml();
 
+        _CA.network.rpcPort = 2020;
+        _CA.network.socketPort = 2021;
+        _CA.metadata.name = "Test RegionServer A";
+
+        Region A = new Region(_CA);
+
+        Thread TA = new Thread(A);
+
+        TA.start();
+    }
     public void run() {
         try {
             System.out.println("[Region Server Running] " + _C.metadata.name);
@@ -116,19 +125,19 @@ public class Region implements Runnable {
                 public void run() {
                     System.out.println("[Timed Check Log]");
                     boolean temp;
-                    for(Map.Entry<String, List<String>> m : regionLog.mainLog.entrySet()){
+                    for (Map.Entry<String, List<String>> m : regionLog.mainLog.entrySet()) {
                         temp = false;
-                        for(table i : tables){
+                        for (table i : tables) {
                             if (Objects.equals(m.getKey(), i.name)) {
                                 temp = true;
                                 break;
                             }
                         }
-                        if(!temp){
+                        if (!temp) {
                             DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
                             System.out.println("[Flash new Log] " + m.getKey());
                             System.out.println("[All new Log] " + m.getValue());
-                            for(String s : m.getValue()){
+                            for (String s : m.getValue()) {
                                 try {
                                     RI.syncExec(s, m.getKey());
                                 } catch (TException e) {
@@ -141,7 +150,7 @@ public class Region implements Runnable {
                         }
                     }
                 }
-            }, 100, 2000));
+            }, 1000, 2000));
             t.start();
             synchronized (this) {
                 wait();
@@ -155,12 +164,14 @@ public class Region implements Runnable {
         @Override
         public execResult statementExec(String cmd, String tableName) throws TException {
             DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
+
             execResult res = interpreter.runSingleCommand(cmd);
-            if(res.type == 2)
+
+            if (res.type == 2)
                 tables.add(new table(tableName));
-            if(res.type == 3)
+            if (res.type == 3)
                 tables.remove(new table(tableName));
-            if(res.status == 1){
+            if (res.status == 1) {
                 System.out.println("[SUCCESS STATE] " + res);
                 regionLog.add(tableName, cmd);
             }
@@ -172,18 +183,23 @@ public class Region implements Runnable {
         public boolean requestCopyTable(String destination, String tableName, boolean isMove) throws TException {
             DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
             String[] address = destination.split(":");
-            return regionLog.transfer(address[0], address[1], tableName);
+            boolean result = regionLog.transfer(address[0], address[1], tableName);
+            if(isMove)
+                regionLog.remove(tableName);
+            return result;
         }
 
         public execResult syncExec(String cmd, String tableName) throws TException {
             DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
+
             execResult res = interpreter.runSingleCommand(cmd);
-            if(res.type == 2)
+
+            if (res.type == 2)
                 tables.add(new table(tableName));
-            if(res.type == 3)
+            if (res.type == 3)
                 tables.remove(new table(tableName));
-            if(res.status == 1){
-                System.out.println("[SUCCESS STATE] " + res);
+            if (res.status == 1) {
+                System.out.println("[SUCCESS SYNC STATE] " + res);
             }
 
             return res;
@@ -198,6 +214,7 @@ public class Region implements Runnable {
             waiter.join();
             return true;
         }
+
         @Data
         class logLoad implements Serializable {
             public List<String> Log;
@@ -212,9 +229,11 @@ public class Region implements Runnable {
                 Type = type;
             }
         }
+
         class copyCommand extends Thread {
             private final Socket socket;
             private final logLoad logload;
+
             public copyCommand(Socket socket, String tableName) {
                 this.socket = socket;
                 this.logload = new logLoad(null, tableName, null, 1);
@@ -223,7 +242,7 @@ public class Region implements Runnable {
             @Override
             public void run() {
                 System.out.println("[Send Copy Command] " + socket.toString() + " Table: " + logload.tableName);
-                try{
+                try {
                     ObjectOutputStream sendOut = new ObjectOutputStream(socket.getOutputStream());
                     sendOut.writeObject(logload);
                     sendOut.flush();
