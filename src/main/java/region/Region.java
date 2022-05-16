@@ -4,14 +4,17 @@ import common.meta.ClientInfo;
 import common.meta.ClientInfoFactory;
 import common.meta.DMSLog;
 import common.meta.table;
+import common.rpc.ThriftClient;
 import common.rpc.ThriftServer;
 import common.zookeeper.Client;
 import common.zookeeper.ClientRegionServerImpl;
 import config.config;
 import lombok.Data;
 import master.MasterImpl;
+import master.rpc.Master;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import org.apache.thrift.transport.TTransportException;
 import region.db.DMSDB;
 import region.db.Interpreter;
 import region.rpc.Region.Iface;
@@ -107,11 +110,8 @@ public class Region implements Runnable {
 
     public static void main(String[] args) throws Exception {
         config _CA = new config();
-        _CA.loadYaml();
 
-//        _CA.network.rpcPort = 2020;
-//        _CA.network.socketPort = 2021;
-        _CA.metadata.name = "Test sajdiasj";
+        _CA.loadYaml();
 
         Region A = new Region(_CA);
 
@@ -123,8 +123,7 @@ public class Region implements Runnable {
     public void startThriftServer() {
         try {
             region.rpc.Region.Iface handler = new RegionImpl();
-            region.rpc.Region.Processor<Iface> processor = new region.rpc.Region.Processor<>(
-                    handler);
+            region.rpc.Region.Processor<Iface> processor = new region.rpc.Region.Processor<>(handler);
             ThriftServer server = new ThriftServer(processor, _C.network.rpcPort);
             server.startServer();
             Thread.sleep(1000000);
@@ -169,8 +168,12 @@ public class Region implements Runnable {
                                 }
                             }
                             regionLog.testOutput();
-                            MasterImpl MI = new MasterImpl();
-                            MI.finishCopyTable(m.getKey(), _C.metadata.uid);
+                            try {
+                                Master.Client master = ThriftClient.getForMaster("127.0.0.1", 9090);
+                                master.finishCopyTable(m.getKey(), _C.metadata.uid);
+                            } catch (TException e) {
+                                throw new RuntimeException(e);
+                            }
                         }
                     }
                 }
