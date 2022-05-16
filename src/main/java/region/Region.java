@@ -127,7 +127,7 @@ public class Region implements Runnable {
             region.rpc.Region.Iface handler = new RegionImpl();
             region.rpc.Region.Processor<Iface> processor = new region.rpc.Region.Processor<>(
                     handler);
-            ThriftServer server = new ThriftServer(processor, _C.zookeeper.port);
+            ThriftServer server = new ThriftServer(processor, _C.network.rpcPort);
             server.startServer();
             Thread.sleep(1000000);
         } catch (Exception e) {
