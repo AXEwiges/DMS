@@ -144,39 +144,9 @@ public class Interpreter {
     }
 
     public execResult runSingleCommand(String state) {
-        String restState = ""; //rest statement after ';' in last line
-
-        int index;
-//        String line;
-//        StringBuilder statement = new StringBuilder();
-//        statement.append(restState); //add rest line
-//        statement.append(" ");
-//        if (execFile == 0)
-//            System.out.print("MiniSQL-->");
-//                System.out.print("-->");
-//        while (true) {  //read whole statement until ';'
-//            line = state;
-//            if (line == null) { //read the file tail
-//                return new execResult(0, "Null statement input." + "\n", 0);
-//            } else if (line.contains(";")) { //last line
-//                index = line.indexOf(";");
-//                statement.append(line.substring(0, index));
-//                restState = line.substring(index + 1); //set reset statement
-//                break;
-//
-//            } else {
-//                statement.append(line);
-//                statement.append(" ");
-//                if (execFile == 0)
-//                    System.out.print("MiniSQL-->");
-////                        System.out.print("-->"); //next line
-//            }
-//        }
-
-        //after get the whole statement
-        index = state.indexOf(";");
+        int index = state.indexOf(";");
         state = state.substring(0, index);
-        String result = state.toString().trim().replaceAll("\\s+", " ");
+        String result = state.trim().replaceAll("\\s+", " ");
         String[] tokens = result.split(" ");
 
         try {
