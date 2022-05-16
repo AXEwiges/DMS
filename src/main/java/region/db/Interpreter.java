@@ -144,6 +144,8 @@ public class Interpreter {
     }
 
     public execResult runSingleCommand(String state) {
+        if(!state.contains(";"))
+            return new execResult(0,"Wrong statement without semicolon" + "\n", 0);
         int index = state.indexOf(";");
         state = state.substring(0, index);
         String result = state.trim().replaceAll("\\s+", " ");
