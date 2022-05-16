@@ -11,7 +11,10 @@ import region.db.RECORDMANAGER.RecordManager;
 import region.db.RECORDMANAGER.TableRow;
 import region.rpc.execResult;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -19,7 +22,7 @@ import java.util.regex.Pattern;
 
 public class Interpreter {
 
-    private static boolean nestLock = false; //not permit to use nesting sql file execution
+    private static final boolean nestLock = false; //not permit to use nesting sql file execution
     private static int execFile = 0;
 
     public API api;
@@ -27,6 +30,7 @@ public class Interpreter {
     public Interpreter() throws Exception {
         api = new API();
     }
+
     public static void main(String[] args) {
 //        try {
 //            API.initial();
@@ -41,6 +45,17 @@ public class Interpreter {
 
     }
 
+    private static execResult parse_show(String statement) throws Exception {
+        String type = Utils.substring(statement, "show ", "").trim();
+        if (type.equals("tables")) {
+            CatalogManager.show_table();
+            return new execResult(1, "Show Table Successfully" + "\n", 1);
+        } else if (type.equals("indexes")) {
+            CatalogManager.show_index();
+            return new execResult(1, "Show Index Successfully" + "\n", 1);
+        } else return new execResult(0, "Can not find valid key word after 'show'!" + "\n", 0);
+    }
+
     private void interpret(BufferedReader reader) throws IOException {
         String restState = ""; //rest statement after ';' in last line
 
@@ -50,7 +65,7 @@ public class Interpreter {
             StringBuilder statement = new StringBuilder();
             if (restState.contains(";")) { // resetLine contains whole statement
                 index = restState.indexOf(";");
-                statement.append(restState.substring(0, index));
+                statement.append(restState, 0, index);
                 restState = restState.substring(index + 1);
             } else {
                 statement.append(restState); //add rest line
@@ -65,7 +80,7 @@ public class Interpreter {
                         return;
                     } else if (line.contains(";")) { //last line
                         index = line.indexOf(";");
-                        statement.append(line.substring(0, index));
+                        statement.append(line, 0, index);
                         restState = line.substring(index + 1); //set reset statement
                         break;
                     } else {
@@ -144,24 +159,24 @@ public class Interpreter {
     }
 
     public execResult runSingleCommand(String state) {
-        if(!state.contains(";"))
-            return new execResult(0,"Wrong statement without semicolon" + "\n", 0);
+        if (!state.contains(";"))
+            return new execResult(0, "Wrong statement without semicolon" + "\n", 0);
         int index = state.indexOf(";");
         state = state.substring(0, index);
         String result = state.trim().replaceAll("\\s+", " ");
         String[] tokens = result.split(" ");
 
         try {
-            if (tokens.length == 1 && tokens[0].equals("")){
+            if (tokens.length == 1 && tokens[0].equals("")) {
                 System.out.println("result");
                 System.out.println(Arrays.toString(tokens));
-                return new execResult(0,"No statement specified" + "\n", 0);
+                return new execResult(0, "No statement specified" + "\n", 0);
             }
 
             switch (tokens[0]) { //match keyword
                 case "create":
                     if (tokens.length == 1)
-                        return new execResult(0,  "Can't find create object" + "\n", 0);
+                        return new execResult(0, "Can't find create object" + "\n", 0);
                     return switch (tokens[1]) {
                         case "table" -> parse_create_table(result);
                         case "index" -> parse_create_index(result);
@@ -169,7 +184,7 @@ public class Interpreter {
                     };
                 case "drop":
                     if (tokens.length == 1)
-                        return new execResult(0,  "Can't find drop object" + "\n", 0);
+                        return new execResult(0, "Can't find drop object" + "\n", 0);
                     return switch (tokens[1]) {
                         case "table" -> parse_drop_table(result);
                         case "index" -> parse_drop_index(result);
@@ -186,24 +201,13 @@ public class Interpreter {
                 case "show":
                     return parse_show(result);
                 default:
-                    return new execResult(0,  "Can't identify " + tokens[0] + "\n", 0);
+                    return new execResult(0, "Can't identify " + tokens[0] + "\n", 0);
             }
         } catch (QException e) {
             return new execResult(e.status, e.msg + "\n", 0);
         } catch (Exception e) {
             return new execResult(0, e.getMessage() + "\n", 0);
         }
-    }
-
-    private static execResult parse_show(String statement) throws Exception {
-        String type = Utils.substring(statement, "show ", "").trim();
-        if (type.equals("tables")) {
-            CatalogManager.show_table();
-            return new execResult(1, "Show Table Successfully" + "\n", 1);
-        } else if (type.equals("indexes")) {
-            CatalogManager.show_index();
-            return new execResult(1, "Show Index Successfully" + "\n", 1);
-        } else return new execResult(0,  "Can not find valid key word after 'show'!" + "\n", 0);
     }
 
     private execResult parse_create_table(String statement) throws Exception {
@@ -214,16 +218,16 @@ public class Interpreter {
 
         int startIndex, endIndex;
         if (statement.equals("")) //no statement after create table
-            return new execResult(0,  "Must specify a table name" + "\n", 0);
+            return new execResult(0, "Must specify a table name" + "\n", 0);
 
         endIndex = statement.indexOf(" ");
         if (endIndex == -1)  //no statement after create table xxx
-            return new execResult(0,  "Can't find attribute definition" + "\n", 0);
+            return new execResult(0, "Can't find attribute definition" + "\n", 0);
 
         String tableName = statement.substring(0, endIndex); //get table name
         startIndex = endIndex + 1; //start index of '('
         if (!statement.substring(startIndex).matches("^\\(.*\\)$"))  //check brackets
-            return new execResult(0,  "Can't not find the definition brackets in table " + tableName + "\n", 0);
+            return new execResult(0, "Can't not find the definition brackets in table " + tableName + "\n", 0);
 
         int length;
         String[] attrParas, attrsDefine;
@@ -241,44 +245,44 @@ public class Interpreter {
             } //split each attribute in parameters: name, type,（length) (unique)
 
             if (attrParas[0].equals("")) { //empty
-                return new execResult(0,  "Empty attribute in table " + tableName + "\n", 0);
+                return new execResult(0, "Empty attribute in table " + tableName + "\n", 0);
             } else if (attrParas[0].equals("primary")) { //primary key definition
                 if (attrParas.length != 3 || !attrParas[1].equals("key"))  //not as primary key xxxx
-                    return new execResult(0,  "Error definition of primary key in table " + tableName + "\n", 0);
+                    return new execResult(0, "Error definition of primary key in table " + tableName + "\n", 0);
                 if (!attrParas[2].matches("^\\(.*\\)$"))  //not as primary key (xxxx)
-                    return new execResult(0,  "Error definition of primary key in table " + tableName + "\n", 0);
+                    return new execResult(0, "Error definition of primary key in table " + tableName + "\n", 0);
                 if (!primaryName.equals("")) //already set primary key
-                    return new execResult(0,  "Redefinition of primary key in table " + tableName + "\n", 0);
+                    return new execResult(0, "Redefinition of primary key in table " + tableName + "\n", 0);
 
                 primaryName = attrParas[2].substring(1, attrParas[2].length() - 1); //set primary key
             } else { //ordinary definition
                 if (attrParas.length == 1)  //only attribute name
-                    return new execResult(0,  "Incomplete definition in attribute " + attrParas[0] + "\n", 0);
+                    return new execResult(0, "Incomplete definition in attribute " + attrParas[0] + "\n", 0);
                 attrName = attrParas[0]; //get attribute name
                 attrType = attrParas[1]; //get attribute type
                 for (int j = 0; j < attrVec.size(); j++) { //check whether name redefines
                     if (attrName.equals(attrVec.get(j).attributeName))
-                        return new execResult(0,  "Redefinition in attribute " + attrParas[0] + "\n", 0);
+                        return new execResult(0, "Redefinition in attribute " + attrParas[0] + "\n", 0);
                 }
                 if (attrType.equals("int") || attrType.equals("float")) { //check type
                     endIndex = 2; //expected end index
                 } else if (attrType.equals("char")) {
                     if (attrParas.length == 2)  //no char length
-                        return new execResult(0,  "ust specify char length in " + attrParas[0] + "\n", 0);
+                        return new execResult(0, "ust specify char length in " + attrParas[0] + "\n", 0);
                     if (!attrParas[2].matches("^\\(.*\\)$"))  //not in char (x) form
-                        return new execResult(0,  "Wrong definition of char length in " + attrParas[0] + "\n", 0);
+                        return new execResult(0, "Wrong definition of char length in " + attrParas[0] + "\n", 0);
 
                     attrLength = attrParas[2].substring(1, attrParas[2].length() - 1); //get length
                     try {
                         length = Integer.parseInt(attrLength); //check the length
                     } catch (NumberFormatException e) {
-                        return new execResult(0,  "The char length in " + attrParas[0] + " dosen't match a int type or overflow" + "\n", 0);
+                        return new execResult(0, "The char length in " + attrParas[0] + " dosen't match a int type or overflow" + "\n", 0);
                     }
                     if (length < 1 || length > 255)
-                        return new execResult(0,  "The char length in " + attrParas[0] + " must be in [1,255] " + "\n", 0);
+                        return new execResult(0, "The char length in " + attrParas[0] + " must be in [1,255] " + "\n", 0);
                     endIndex = 3; //expected end index
                 } else { //unmatched type
-                    return new execResult(0,  "Error attribute type " + attrType + " in " + attrParas[0] + "\n", 0);
+                    return new execResult(0, "Error attribute type " + attrType + " in " + attrParas[0] + "\n", 0);
                 }
 
                 if (attrParas.length == endIndex) { //check unique constraint
@@ -286,7 +290,7 @@ public class Interpreter {
                 } else if (attrParas.length == endIndex + 1 && attrParas[endIndex].equals("unique")) {  //unique
                     attrUnique = true;
                 } else { //wrong definition
-                    return new execResult(0,  "Error constraint definition in " + attrParas[0] + "\n", 0);
+                    return new execResult(0, "Error constraint definition in " + attrParas[0] + "\n", 0);
                 }
 
                 if (attrType.equals("char")) { //generate attribute
@@ -299,7 +303,7 @@ public class Interpreter {
         }
 
         if (primaryName.equals(""))  //check whether set the primary key
-            return new execResult(0,  "Not specified primary key in table " + tableName + "\n", 0);
+            return new execResult(0, "Not specified primary key in table " + tableName + "\n", 0);
 
         Table table = new Table(tableName, primaryName, attrVec); // create table
         api.create_table(tableName, table);
@@ -311,9 +315,9 @@ public class Interpreter {
     private execResult parse_drop_table(String statement) throws Exception {
         String[] tokens = statement.split(" ");
         if (tokens.length == 2)
-            return new execResult(0,  "Not specify table name" + "\n", 0);
+            return new execResult(0, "Not specify table name" + "\n", 0);
         if (tokens.length != 3)
-            return new execResult(0,  "Extra parameters in drop table" + "\n", 0);
+            return new execResult(0, "Extra parameters in drop table" + "\n", 0);
 
         String tableName = tokens[2]; //get table name
         api.drop_table(tableName);
@@ -331,23 +335,23 @@ public class Interpreter {
 
         String indexName = tokens[2]; //get index name
         if (tokens.length == 3 || !tokens[3].equals("on"))
-            return new execResult(0,  "Must add keyword 'on' after index name " + indexName + "\n", 0);
+            return new execResult(0, "Must add keyword 'on' after index name " + indexName + "\n", 0);
         if (tokens.length == 4)
-            return new execResult(0,  "Not specify table name" + "\n", 0);
+            return new execResult(0, "Not specify table name" + "\n", 0);
 
         String tableName = tokens[4]; //get table name
         if (tokens.length == 5)
-            return new execResult(0,  "Not specify attribute name in table " + tableName + "\n", 0);
+            return new execResult(0, "Not specify attribute name in table " + tableName + "\n", 0);
 
         String attrName = tokens[5];
         if (!attrName.matches("^\\(.*\\)$"))  //not as (xxx) form
-            return new execResult(0,  "Error in specifiy attribute name " + attrName + "\n", 0);
+            return new execResult(0, "Error in specifiy attribute name " + attrName + "\n", 0);
 
         attrName = attrName.substring(1, attrName.length() - 1); //extract attribute name
         if (tokens.length != 6)
-            return new execResult(0,  "Extra parameters in create index" + "\n", 0);
+            return new execResult(0, "Extra parameters in create index" + "\n", 0);
         if (!CatalogManager.is_unique(tableName, attrName))
-            return new execResult(1,  "Not a unique attribute" + "\n", 1);
+            return new execResult(1, "Not a unique attribute" + "\n", 1);
 
         Index index = new Index(indexName, tableName, attrName);
         api.create_index(index);
@@ -357,9 +361,9 @@ public class Interpreter {
     private execResult parse_drop_index(String statement) throws Exception {
         String[] tokens = statement.split(" ");
         if (tokens.length == 2)
-            return new execResult(0,  "Not specify index name" + "\n", 0);
+            return new execResult(0, "Not specify index name" + "\n", 0);
         if (tokens.length != 3)
-            return new execResult(0,  "Extra parameters in drop index" + "\n", 0);
+            return new execResult(0, "Extra parameters in drop index" + "\n", 0);
 
         String indexName = tokens[2]; //get table name
         api.drop_index(indexName);
@@ -376,7 +380,7 @@ public class Interpreter {
         long startTime, endTime;
         startTime = System.currentTimeMillis();
         if (attrStr.equals(""))
-            return new execResult(0,  "Can not find key word 'from' or lack of blank before from!\n", 0);
+            return new execResult(0, "Can not find key word 'from' or lack of blank before from!\n", 0);
         if (attrStr.trim().equals("*")) {
             //select all attributes
             if (tabStr.equals("")) {  // select * from [];
@@ -422,31 +426,31 @@ public class Interpreter {
 
         int startIndex, endIndex;
         if (statement.equals(""))
-            return new execResult(0,  "Must add keyword 'into' after insert " + "\n", 0);
+            return new execResult(0, "Must add keyword 'into' after insert " + "\n", 0);
 
         endIndex = statement.indexOf(" "); //check into keyword
         if (endIndex == -1)
-            return new execResult(0,  "Not specify the table name" + "\n", 0);
+            return new execResult(0, "Not specify the table name" + "\n", 0);
         if (!statement.substring(0, endIndex).equals("into"))
-            return new execResult(0,  "Must add keyword 'into' after insert" + "\n", 0);
+            return new execResult(0, "Must add keyword 'into' after insert" + "\n", 0);
 
         startIndex = endIndex + 1;
         endIndex = statement.indexOf(" ", startIndex); //check table name
         if (endIndex == -1)
-            return new execResult(0,  "Not specify the insert value" + "\n", 0);
+            return new execResult(0, "Not specify the insert value" + "\n", 0);
 
         String tableName = statement.substring(startIndex, endIndex); //get table name
         startIndex = endIndex + 1;
         endIndex = statement.indexOf(" ", startIndex); //check values keyword
         if (endIndex == -1)
-            return new execResult(0,  "Syntax error: Not specify the insert value" + "\n", 0);
+            return new execResult(0, "Syntax error: Not specify the insert value" + "\n", 0);
 
         if (!statement.substring(startIndex, endIndex).equals("values"))
-            return new execResult(0,  "Must add keyword 'values' after table " + tableName + "\n", 0);
+            return new execResult(0, "Must add keyword 'values' after table " + tableName + "\n", 0);
 
         startIndex = endIndex + 1;
         if (!statement.substring(startIndex).matches("^\\(.*\\)$"))  //check brackets
-            return new execResult(0,  "Can't not find the insert brackets in table " + tableName + "\n", 0);
+            return new execResult(0, "Can't not find the insert brackets in table " + tableName + "\n", 0);
 
         String[] valueParas = statement.substring(startIndex + 1).split(","); //get attribute tokens
         TableRow tableRow = new TableRow();
@@ -455,15 +459,15 @@ public class Interpreter {
             if (i == valueParas.length - 1)  //last attribute
                 valueParas[i] = valueParas[i].substring(0, valueParas[i].length() - 1);
             if (valueParas[i].equals("")) //empty attribute
-                return new execResult(0,  "Empty attribute value in insert value" + "\n", 0);
-            if (valueParas[i].matches("^\".*\"$") || valueParas[i].matches("^\'.*\'$"))  // extract from '' or " "
+                return new execResult(0, "Empty attribute value in insert value" + "\n", 0);
+            if (valueParas[i].matches("^\".*\"$") || valueParas[i].matches("^'.*'$"))  // extract from '' or " "
                 valueParas[i] = valueParas[i].substring(1, valueParas[i].length() - 1);
             tableRow.add_attribute_value(valueParas[i]); //add to table row
         }
 
         //Check unique attributes
         if (tableRow.get_attribute_size() != CatalogManager.get_attribute_num(tableName))
-            return new execResult(0,  "Attribute number doesn't match" + "\n", 1);
+            return new execResult(0, "Attribute number doesn't match" + "\n", 1);
         Vector<Attribute> attributes = CatalogManager.get_table(tableName).attributeVector;
         for (int i = 0; i < attributes.size(); i++) {
             Attribute attr = attributes.get(i);
@@ -480,7 +484,7 @@ public class Interpreter {
                     if (res.isEmpty())
                         continue;
                 }
-                return new execResult(0,  "Duplicate unique key: " + attr.attributeName + "\n", 1);
+                return new execResult(0, "Duplicate unique key: " + attr.attributeName + "\n", 1);
             }
         }
 
@@ -523,7 +527,7 @@ public class Interpreter {
         execFile++;
         String[] tokens = statement.split(" ");
         if (tokens.length != 2)
-            return new execResult(0,  "Extra parameters in sql file execution", 0);
+            return new execResult(0, "Extra parameters in sql file execution", 0);
 
         String fileName = tokens[1];
         try {
@@ -533,14 +537,14 @@ public class Interpreter {
 //            nestLock = true; //lock, avoid nested execution
             interpret(fileReader);
         } catch (FileNotFoundException e) {
-            return new execResult(1,  "Can't find the file", 1);
+            return new execResult(1, "Can't find the file", 1);
         } catch (IOException e) {
-            return new execResult(1,  "IO exception occurs", 1);
+            return new execResult(1, "IO exception occurs", 1);
         } finally {
             execFile--;
 //            nestLock = false; //unlock
         }
-        return new execResult(0,  "Exec file Successfully", 0);
+        return new execResult(0, "Exec file Successfully", 0);
     }
 }
 
@@ -570,7 +574,7 @@ class Utils {
             int index = contains(conSet[i], OPERATOR);
             if (index == NONEXIST) throw new Exception("Syntax error: Invalid conditions " + conSet[i]);
             String attr = substring(conSet[i], "", OPERATOR[index]).trim();
-            String value = substring(conSet[i], OPERATOR[index], "").trim().replace("\'", "").replace("\"", "");
+            String value = substring(conSet[i], OPERATOR[index], "").trim().replace("'", "").replace("\"", "");
             c.add(new Condition(attr, OPERATOR[index], value));
         }
         return c;
