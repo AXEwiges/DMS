@@ -89,6 +89,11 @@ public class DMSLog {
         checkPoints.put(tableName, integer);
         System.out.println("[All in statement] " + mainLog.get(tableName));
     }
+
+    public void stopService() {
+        monitorThread.interrupt();
+    }
+
     /**
      * @author AXEwiges
      *

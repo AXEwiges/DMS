@@ -13,7 +13,7 @@ import java.util.List;
 
 import static region.Utils.DBFiles;
 
-public class testit {
+public class testRM {
     static void delFile(File file) {
         if (!file.exists())
             return;
@@ -75,7 +75,6 @@ public class testit {
                 for(int i = 0;i < 5;i++) {
                     if(configs.get(i).network.rpcPort == I.rpcPort){
                         regionThreads.get(i).interrupt();
-                        break;
                     }
                 }
             } catch (TException e) {
