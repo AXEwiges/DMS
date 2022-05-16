@@ -4,6 +4,8 @@ import common.meta.ClientInfo;
 import common.rpc.ThriftClient;
 import common.zookeeper.Client;
 import config.config;
+import master.rpc.Master;
+import org.apache.thrift.TException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -73,16 +75,18 @@ class MasterTest {
                 tableCreate.add("create table " + testTables.get(i) + " (ID int, Name" + i + " char(32), email char(255), primary key(ID));");
             }
 
-            MasterImpl MI = new MasterImpl();
+            try {
+                Master.Client master = ThriftClient.getForMaster("127.0.0.1", 9090);
+                List<ClientInfo> thisTurn = master.getRegionsOfTable("Test Table 1", true, false);
 
-            List<ClientInfo> thisTurn = MI.getRegionsOfTable("Test Table 1", true, false);
-
-            for(ClientInfo I : thisTurn) {
-                region.rpc.Region.Client region = ThriftClient.getForRegionServer(I.ip, I.rpcPort);
-                execResult res = region.statementExec(tableCreate.get(0), testTables.get(0));
-                System.out.println(res);
+                for(ClientInfo I : thisTurn) {
+                    region.rpc.Region.Client region = ThriftClient.getForRegionServer(I.ip, I.rpcPort);
+                    execResult res = region.statementExec(tableCreate.get(0), testTables.get(0));
+                    System.out.println(res);
+                }
+            } catch (TException e) {
+                throw new RuntimeException(e);
             }
-
 
         } catch (Exception e) {
             e.printStackTrace();
