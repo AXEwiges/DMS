@@ -25,6 +25,8 @@ import java.io.Serializable;
 import java.net.Socket;
 import java.util.*;
 
+import static region.Utils.DBFiles;
+
 public class Region implements Runnable {
     /**
      * 加载服务器配置信息
@@ -91,8 +93,8 @@ public class Region implements Runnable {
         //
         RI = new RegionImpl();
         //
-        DMSDB x = new DMSDB("E:\\SQL\\DMS\\src\\main\\java\\region\\db\\DBFiles\\" + _C.metadata.name + "\\");
-        DMSDB.changeDIR("E:\\SQL\\DMS\\src\\main\\java\\region\\db\\DBFiles\\" + _C.metadata.name + "\\");
+        DMSDB x = new DMSDB(DBFiles + _C.metadata.name + "\\");
+        DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
         File A = new File(DMSDB.DBDIR.storageSpace);
         if(!A.isDirectory()) A.mkdir();
         //
@@ -123,7 +125,7 @@ public class Region implements Runnable {
                             }
                         }
                         if(!temp){
-                            DMSDB.changeDIR("E:\\SQL\\DMS\\src\\main\\java\\region\\db\\DBFiles\\" + _C.metadata.name + "\\");
+                            DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
                             System.out.println("[Flash new Log] " + m.getKey());
                             System.out.println("[All new Log] " + m.getValue());
                             for(String s : m.getValue()){
@@ -152,7 +154,7 @@ public class Region implements Runnable {
     public class RegionImpl implements Iface {
         @Override
         public execResult statementExec(String cmd, String tableName) throws TException {
-            DMSDB.changeDIR("E:\\SQL\\DMS\\src\\main\\java\\region\\db\\DBFiles\\" + _C.metadata.name + "\\");
+            DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
             execResult res = interpreter.runSingleCommand(cmd);
             if(res.type == 2)
                 tables.add(new table(tableName));
@@ -168,13 +170,13 @@ public class Region implements Runnable {
 
         @Override
         public boolean requestCopyTable(String destination, String tableName, boolean isMove) throws TException {
-            DMSDB.changeDIR("E:\\SQL\\DMS\\src\\main\\java\\region\\db\\DBFiles\\" + _C.metadata.name + "\\");
+            DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
             String[] address = destination.split(":");
             return regionLog.transfer(address[0], address[1], tableName);
         }
 
         public execResult syncExec(String cmd, String tableName) throws TException {
-            DMSDB.changeDIR("E:\\SQL\\DMS\\src\\main\\java\\region\\db\\DBFiles\\" + _C.metadata.name + "\\");
+            DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
             execResult res = interpreter.runSingleCommand(cmd);
             if(res.type == 2)
                 tables.add(new table(tableName));

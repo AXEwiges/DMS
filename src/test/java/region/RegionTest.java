@@ -10,14 +10,12 @@ import region.rpc.execResult;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.ObjectInputFilter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static region.Utils.DBFiles;
 
 class RegionTest {
 
@@ -84,9 +82,8 @@ class RegionTest {
     }
 
     void clearPath() {
-        String Root = "E:\\SQL\\DMS\\src\\main\\java\\region\\db\\DBFiles\\";
-        File DBPATH = new File(Root);
-        delFile(new File(Root));
+        File DBPATH = new File(DBFiles);
+        delFile(DBPATH);
         boolean R = DBPATH.mkdir();
     }
 
