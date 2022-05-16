@@ -34,7 +34,7 @@ public class client {
     public static void main(String[] args) {
         try {
             Scanner scan = new Scanner(System.in);
-            Master.Client master = ThriftClient.getForMaster("127.0.0.1", 3306);
+            Master.Client master = ThriftClient.getForMaster("127.0.0.1", 9090);
             StringBuilder rawCmd;
             do {
                 rawCmd = new StringBuilder();
