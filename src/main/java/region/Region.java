@@ -10,11 +10,9 @@ import common.zookeeper.Client;
 import common.zookeeper.ClientRegionServerImpl;
 import config.config;
 import lombok.Data;
-import master.MasterImpl;
 import master.rpc.Master;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
 import region.db.DMSDB;
 import region.db.Interpreter;
 import region.rpc.Region.Iface;
@@ -66,6 +64,10 @@ public class Region implements Runnable {
      * 定时触发
      */
     Timer timer = new Timer();
+    /**
+     * 存储目录
+     */
+    public String workSpace;
 
     public Region() throws Exception {
         //加载配置
@@ -84,9 +86,13 @@ public class Region implements Runnable {
         RI = new RegionImpl();
         //
         _C.metadata.name = _C.metadata.name + _C.metadata.uid;
+        //
+        workSpace = DBFiles + _C.metadata.name + "\\";
         //实例化数据库必要变量
-        DMSDB x = new DMSDB(DBFiles + _C.metadata.name + "\\");
-        DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
+        DMSDB x = new DMSDB(workSpace);
+        //
+        changeWorkSpace();
+        //
         File A = new File(DMSDB.DBDIR.storageSpace);
         if (!A.isDirectory()) A.mkdir();
         //定义独立interpreter
@@ -109,9 +115,13 @@ public class Region implements Runnable {
         RI = new RegionImpl();
         //
         _C.metadata.name = _C.metadata.name + _C.metadata.uid;
+        //
+        workSpace = DBFiles + _C.metadata.name + "\\";
         //实例化数据库必要变量
-        DMSDB x = new DMSDB(DBFiles + _C.metadata.name + "\\");
-        DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
+        DMSDB x = new DMSDB(workSpace);
+        //
+        changeWorkSpace();
+        //
         File A = new File(DMSDB.DBDIR.storageSpace);
         if (!A.isDirectory()) A.mkdir();
         //定义独立interpreter
@@ -177,7 +187,7 @@ public class Region implements Runnable {
                         }
                         regionLog.testOutput();
                         try {
-                            Master.Client master = ThriftClient.getForMaster("127.0.0.1", 9090);
+                            Master.Client master = ThriftClient.getForMaster(regionData.ip, regionData.rpcPort);
                             master.finishCopyTable(m.getKey(), _C.metadata.uid);
                         } catch (TException e) {
                             throw new RuntimeException(e);
@@ -209,14 +219,18 @@ public class Region implements Runnable {
         }
     }
 
+    public void changeWorkSpace() {
+        DMSDB.changeDIR(workSpace);
+    }
+
     public class RegionImpl implements Iface {
         @Override
         public execResult statementExec(String cmd, String tableName) throws TException {
-            DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
+            changeWorkSpace();
 
             execResult res = interpreter.runSingleCommand(cmd);
 
-            if (res.type == 2){
+            if (res.type == 2) {
                 tables.add(new table(tableName));
             }
 
@@ -246,7 +260,7 @@ public class Region implements Runnable {
         }
 
         public void syncExec(String cmd, String tableName) throws TException {
-            DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
+            changeWorkSpace();
 
             execResult res = interpreter.runSingleCommand(cmd);
 
