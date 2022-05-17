@@ -190,6 +190,7 @@ public class Region implements Runnable {
                             Master.Client master = ThriftClient.getForMaster(regionData.ip, regionData.rpcPort);
                             master.finishCopyTable(m.getKey(), _C.metadata.uid);
                         } catch (TException e) {
+                            e.printStackTrace();
                             throw new RuntimeException(e);
                         }
                     }
