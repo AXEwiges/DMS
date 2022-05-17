@@ -159,6 +159,7 @@ public class Region implements Runnable {
     }
 
     public void run() {
+        // Thrift Server 线程
         Thread z = new Thread(() -> {
             try {
                 startThriftServer();
@@ -168,9 +169,9 @@ public class Region implements Runnable {
                 e.printStackTrace();
             }
         });
+        // Log 同步线程
         Thread t = new Thread(() -> timer.schedule(new TimerTask() {
             public void run() {
-//                    System.out.println("[Timed Check Log]");
                 boolean temp;
                 for (Map.Entry<String, List<String>> m : regionLog.mainLog.entrySet()) {
                     temp = false;
@@ -193,7 +194,6 @@ public class Region implements Runnable {
                                 throw new RuntimeException(e);
                             }
                         }
-                        regionLog.testOutput();
                         try {
                             Master.Client master = ThriftClient.getForMaster(regionData.ip, regionData.rpcPort);
                             master.finishCopyTable(m.getKey(), _C.metadata.uid);
@@ -230,11 +230,24 @@ public class Region implements Runnable {
         }
     }
 
+    /**
+     * 改变工作目录，尽可能确保不会冲突
+     * */
     public void changeWorkSpace() {
         DMSDB.changeDIR(workSpace);
     }
 
+    /**
+     * 实现的Thrift具体接口
+     * */
     public class RegionImpl implements Iface {
+        /**
+         * 执行一句语句，并返回结果
+         * @param cmd 执行的语句
+         * @param tableName 表名
+         *
+         * @return res 一个{@code execResult}结构体
+         * */
         @Override
         public execResult statementExec(String cmd, String tableName) throws TException {
             changeWorkSpace();
@@ -258,6 +271,14 @@ public class Region implements Runnable {
             return res;
         }
 
+        /**
+         * 向某个目标服务器发送同步数据
+         * @param destination 目的地字符串
+         * @param tableName 表名
+         * @param isMove 是否完全迁移
+         *
+         * @return result 布尔型数据，表示是否成功
+         * */
         @Override
         public boolean requestCopyTable(String destination, String tableName, boolean isMove) throws TException {
             DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
@@ -275,6 +296,11 @@ public class Region implements Runnable {
             return result;
         }
 
+        /**
+         * 内部执行类，用于日志接收后的原地复读
+         * @param cmd 执行的指令
+         * @param tableName 表名
+         * */
         public void syncExec(String cmd, String tableName) throws TException {
             changeWorkSpace();
 
@@ -289,9 +315,15 @@ public class Region implements Runnable {
             if (res.status == 1) {
                 TL.RInfo(1, "SUCCESS SYNC STATE", String.valueOf(res));
             }
-
         }
 
+        /**
+         * 用于向目标服务器立即触发同步使用的指令
+         * @param destination 目的地址
+         * @param tableName 表名
+         *
+         * @return true 默认返回真值，不做任何处理
+         * */
         @Override
         public boolean copyTable(String destination, String tableName) throws IOException, InterruptedException {
             String[] address = destination.split(":");

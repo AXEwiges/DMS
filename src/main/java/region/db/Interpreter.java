@@ -651,7 +651,7 @@ class Utils {
             }
             res_val.append("|\n");
         }
-        res_val = new StringBuilder(res_val + "Query ok! " + tab.size() + " rows are selected" + "\n");
+        res_val = new StringBuilder(res_val + "Query ok! " + tab.size() + " rows are selected");
         return res_val.toString();
     }
 }

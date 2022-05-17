@@ -20,9 +20,21 @@ import java.util.concurrent.ConcurrentHashMap;
  * */
 @Data
 class logLoad implements Serializable {
+    /**
+     * 传输的日志组成列表
+     * */
     public List<String> Log;
+    /**
+     * 表名信息，用于同步时加入
+     * */
     public String tableName;
+    /**
+     * 传输检查点
+     * */
     public Integer checkPoint;
+    /**
+     * 传输的Type标识符，作为特殊
+     * */
     public Integer Type;
 
     public logLoad(List<String> strings, String name, Integer integer, Integer type) {
@@ -55,17 +67,14 @@ public class DMSLog {
      * */
     public syncRecvThread monitorThread;
     /**
-     * 必要的config数据
+     * 必要的日志config数据
      * */
     public config _LC;
     /**
-     * 颜色打印
+     * 颜色打印功能的具体对象
      * */
     public TestTools TL;
-    /**
-     * 加入日志打印
-     * */
-//    private Logger logger = Logger.getLogger(DMSLog.class);
+
     public DMSLog(config _C){
         _LC = _C;
         TL = new TestTools();
@@ -219,22 +228,25 @@ public class DMSLog {
         }
     }
     /**
-     * 用于移动日志
+     * 用于移动日志时删除原表格
+     * @param tableName 需要被删除的表名
      * */
     public synchronized void remove(String tableName){
         mainLog.remove(tableName);
         checkPoints.remove(tableName);
     }
-
+    /**
+     * 用于打印所有的表，用于测试
+     * */
     public void testOutput(){
         TL.RInfo(4, "Test Output", _LC.metadata.name);
         for(Map.Entry<String, List<String>> m : mainLog.entrySet()){
             TL.RInfo(4, "Table Name", m.getKey());
-            TL.RInfo("--------------------");
+            TL.RInfo(6, "--------------------");
             for(String s : m.getValue()){
                 TL.RInfo(4, "Table Log", s);
             }
-            TL.RInfo(4, "--------------------");
+            TL.RInfo(6, "--------------------");
         }
     }
 }

@@ -1,5 +1,6 @@
 package region;
 
+import common.meta.TestTools;
 import config.config;
 import org.apache.thrift.TException;
 import org.apache.zookeeper.KeeperException;
@@ -10,8 +11,10 @@ import region.rpc.execResult;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
-import common.meta.TestTools;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 import static region.Utils.DBFiles;
 
@@ -43,7 +46,7 @@ class RegionTest {
         _CB.network.socketPort = 2023;
         _CB.metadata.name = "Test RegionServer B";
 
-        try{
+        try {
             Region A = new Region(_CA);
             Region B = new Region(_CB);
 
@@ -88,7 +91,7 @@ class RegionTest {
     @Test
     void statementExecTest() {
         TestTools TL = new TestTools();
-        
+
         config _CA = new config();
         _CA.loadYaml();
 
@@ -105,7 +108,7 @@ class RegionTest {
 
         clearPath();
 
-        try{
+        try {
             Region A = new Region(_CA);
             Region B = new Region(_CB);
 
@@ -119,21 +122,20 @@ class RegionTest {
 
             TL.RInfo("Test UID", String.valueOf(uuid));
 
-            Map<String, String> testCMD = new LinkedHashMap<String, String>(){{
+            Map<String, String> testCMD = new LinkedHashMap<String, String>() {{
                 put("create table " + "TEST_" + uuid + " (ID int, Name char(32), email char(255), primary key(ID));", "Create table " + "TEST_" + uuid + " successfully\n");
-                put("insert into " +"TEST_" + uuid + " values (123, 'CMD', 'TEST@gmail.com');", "Insert successfully\n");
+                put("insert into " + "TEST_" + uuid + " values (123, 'CMD', 'TEST@gmail.com');", "Insert successfully\n");
                 put("create table " + "TEST_" + uuid + "_1" + " (ID int, Name char(32), email char(255), primary key(ID));", "Create table " + "TEST_" + uuid + "_1" + " successfully\n");
                 put("insert into " + "TEST_" + uuid + "_1" + " values (123, 'CMD', 'TEST@gmail.com');", "Insert successfully\n");
                 put("select * from " + "TEST_" + uuid + ";", "");
             }};
 
-            for(Map.Entry<String, String> statement : testCMD.entrySet()) {
+            for (Map.Entry<String, String> statement : testCMD.entrySet()) {
                 TL.RInfo("Test Statement", statement.getKey());
                 execResult execRes = B.RI.statementExec(statement.getKey(), "TEST_" + uuid);
-                if (Objects.equals(execRes.result, statement.getValue())){
+                if (Objects.equals(execRes.result, statement.getValue())) {
                     TL.RInfo("Statement Test Successful", String.valueOf(execRes));
-                }
-                else
+                } else
                     TL.RInfo("Statement Test Failed", String.valueOf(execRes));
             }
 
