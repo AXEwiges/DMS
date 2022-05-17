@@ -73,7 +73,7 @@ public class Region implements Runnable {
         _C.loadYaml();
         //连接zookeeper
         regionThrift = new ClientRegionServerImpl();
-        regionData = regionThrift.connect("127.0.0.1:2181",
+        regionData = regionThrift.connect(_C.zookeeper.ip + ":" + _C.zookeeper.port,
                 ClientInfoFactory.from(_C.zookeeper.ip, _C.network.rpcPort, _C.network.socketPort), _C.network.timeOut);
         //设定UID
         _C.metadata.uid = regionData.uid;
@@ -82,9 +82,11 @@ public class Region implements Runnable {
         regionLog = new DMSLog(_C);
         //暴露接口
         RI = new RegionImpl();
+        //
+        _C.metadata.name = _C.metadata.name + _C.metadata.uid;
         //实例化数据库必要变量
         DMSDB x = new DMSDB(DBFiles + _C.metadata.name + "\\");
-        DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\" + _C.metadata.uid + "\\");
+        DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
         File A = new File(DMSDB.DBDIR.storageSpace);
         if (!A.isDirectory()) A.mkdir();
         //定义独立interpreter
@@ -96,7 +98,7 @@ public class Region implements Runnable {
         this._C = _C;
         //连接zookeeper
         regionThrift = new ClientRegionServerImpl();
-        regionData = regionThrift.connect("127.0.0.1:2181",
+        regionData = regionThrift.connect(_C.zookeeper.ip + ":" + _C.zookeeper.port,
                 ClientInfoFactory.from(_C.zookeeper.ip, _C.network.rpcPort, _C.network.socketPort), _C.network.timeOut);
         //设定UID
         _C.metadata.uid = regionData.uid;
@@ -105,6 +107,8 @@ public class Region implements Runnable {
         regionLog = new DMSLog(_C);
         //
         RI = new RegionImpl();
+        //
+        _C.metadata.name = _C.metadata.name + _C.metadata.uid;
         //实例化数据库必要变量
         DMSDB x = new DMSDB(DBFiles + _C.metadata.name + "\\");
         DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
