@@ -101,7 +101,9 @@ public class Master {
                     Integer des_uid = uids.get(0);
                     String des_ip = regionsInfomation.get(des_uid).ip;
                     int des_port = regionsInfomation.get(des_uid).socketPort;
+                    int tableSize = regionsToTables.get(des_uid).size();
                     client.requestCopyTable(des_ip + ":" + des_port, tableName, false);
+                    while(regionsToTables.get(des_uid).size()==tableSize);
 //                    while (!isfinish) ;
 //                    isfinish = false;
                     /*
@@ -164,7 +166,9 @@ public class Master {
                         int des_uid = l.get(0);
                         ClientInfo des = regionsInfomation.get(des_uid);
                         tablesToRegions.get(tableName).remove(Integer.valueOf(source_uid));
+                        int tableSize = regionsToTables.get(des_uid).size();
                         client.requestCopyTable(des.ip + ":" + des.socketPort, tableName, true);
+                        while(regionsToTables.get(des_uid).size()==tableSize);
 //                        while (!isfinish) ;
 //                        isfinish = false;
                         /*
