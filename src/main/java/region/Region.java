@@ -180,6 +180,12 @@ public class Region implements Runnable {
                         }
                     }
                 }
+                synchronized (this) {
+                    tables.clear();
+                    for(Map.Entry<String, List<String>> m : regionLog.mainLog.entrySet())
+                        tables.add(new table(m.getKey()));
+                }
+
             }
         }, 1000, 2000));
         try {
@@ -206,10 +212,15 @@ public class Region implements Runnable {
 
             execResult res = interpreter.runSingleCommand(cmd);
 
-            if (res.type == 2)
+            if (res.type == 2){
                 tables.add(new table(tableName));
-            if (res.type == 3)
+            }
+
+            if (res.type == 3) {
                 tables.remove(new table(tableName));
+                regionLog.remove(tableName);
+            }
+
             if (res.status == 1) {
                 System.out.println("[SUCCESS STATE] " + res);
                 regionLog.add(tableName, cmd);
@@ -237,8 +248,10 @@ public class Region implements Runnable {
 
             if (res.type == 2)
                 tables.add(new table(tableName));
-            if (res.type == 3)
+            if (res.type == 3) {
                 tables.remove(new table(tableName));
+                regionLog.remove(tableName);
+            }
             if (res.status == 1) {
                 System.out.println("[SUCCESS SYNC STATE] " + res);
             }
