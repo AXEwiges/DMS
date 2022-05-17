@@ -74,7 +74,7 @@ public class Region implements Runnable {
         //连接zookeeper
         regionThrift = new ClientRegionServerImpl();
         regionData = regionThrift.connect(_C.zookeeper.ip + ":" + _C.zookeeper.port,
-                ClientInfoFactory.from(_C.zookeeper.ip, _C.network.rpcPort, _C.network.socketPort), _C.network.timeOut);
+                ClientInfoFactory.from(_C.network.ip, _C.network.rpcPort, _C.network.socketPort), _C.network.timeOut);
         //设定UID
         _C.metadata.uid = regionData.uid;
         System.out.println("[Zookeeper Setting] UID: " + _C.metadata.uid);
@@ -99,7 +99,7 @@ public class Region implements Runnable {
         //连接zookeeper
         regionThrift = new ClientRegionServerImpl();
         regionData = regionThrift.connect(_C.zookeeper.ip + ":" + _C.zookeeper.port,
-                ClientInfoFactory.from(_C.zookeeper.ip, _C.network.rpcPort, _C.network.socketPort), _C.network.timeOut);
+                ClientInfoFactory.from(_C.network.ip, _C.network.rpcPort, _C.network.socketPort), _C.network.timeOut);
         //设定UID
         _C.metadata.uid = regionData.uid;
         System.out.println("[Zookeeper Setting] UID: " + _C.metadata.uid);
