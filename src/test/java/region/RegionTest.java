@@ -10,10 +10,8 @@ import region.rpc.execResult;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+import common.meta.TestTools;
 
 import static region.Utils.DBFiles;
 
@@ -89,6 +87,8 @@ class RegionTest {
 
     @Test
     void statementExecTest() {
+        TestTools TL = new TestTools();
+        
         config _CA = new config();
         _CA.loadYaml();
 
@@ -117,7 +117,7 @@ class RegionTest {
 
             UUID uuid = UUID.randomUUID();
 
-            System.out.println("[Test UID] " + uuid);
+            TL.RInfo("Test UID", String.valueOf(uuid));
 
             Map<String, String> testCMD = new LinkedHashMap<String, String>(){{
                 put("create table " + "TEST_" + uuid + " (ID int, Name char(32), email char(255), primary key(ID));", "Create table " + "TEST_" + uuid + " successfully\n");
@@ -128,22 +128,22 @@ class RegionTest {
             }};
 
             for(Map.Entry<String, String> statement : testCMD.entrySet()) {
-                System.out.println("[Test Statement] " + statement.getKey());
+                TL.RInfo("Test Statement", statement.getKey());
                 execResult execRes = B.RI.statementExec(statement.getKey(), "TEST_" + uuid);
                 if (Objects.equals(execRes.result, statement.getValue())){
-                    System.out.println("[Statement Test Successful] " + execRes);
+                    TL.RInfo("Statement Test Successful", String.valueOf(execRes));
                 }
                 else
-                    System.out.println("[Statement Test Failed] " + execRes);
+                    TL.RInfo("Statement Test Failed", String.valueOf(execRes));
             }
 
             boolean result = B.RI.requestCopyTable("127.0.0.1:" + _CA.network.socketPort, "TEST_" + uuid, true);
 
-            System.out.println("[Transport Result] " + result);
+            TL.RInfo("Transport Result", String.valueOf(result));
 
             execResult execRes = A.RI.statementExec("show tables", "TEST_" + uuid + ";");
 
-            System.out.println("[Show Result] " + execRes);
+            TL.RInfo("Show Result", String.valueOf(execRes));
 
             A.regionLog.testOutput();
 

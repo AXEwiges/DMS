@@ -1,9 +1,6 @@
 package region;
 
-import common.meta.ClientInfo;
-import common.meta.ClientInfoFactory;
-import common.meta.DMSLog;
-import common.meta.table;
+import common.meta.*;
 import common.rpc.ThriftClient;
 import common.rpc.ThriftServer;
 import common.zookeeper.Client;
@@ -68,24 +65,30 @@ public class Region implements Runnable {
      * 存储目录
      */
     public String workSpace;
+    /**
+     * 彩色打印
+     * */
+    public TestTools TL;
 
     public Region() throws Exception {
         //加载配置
         this._C = new config();
         _C.loadYaml();
+        //
+        TL = new TestTools();
         //连接zookeeper
         regionThrift = new ClientRegionServerImpl();
         regionData = regionThrift.connect(_C.zookeeper.ip + ":" + _C.zookeeper.port,
                 ClientInfoFactory.from(_C.network.ip, _C.network.rpcPort, _C.network.socketPort), _C.network.timeOut);
         //设定UID
         _C.metadata.uid = regionData.uid;
-        System.out.println("[Zookeeper Setting] UID: " + _C.metadata.uid);
+        TL.RInfo("Zookeeper Setting", "UID: ", Integer.toString(_C.metadata.uid));
         //启动接收子线程
         regionLog = new DMSLog(_C);
         //暴露接口
         RI = new RegionImpl();
         //
-        _C.metadata.name = _C.metadata.name + _C.metadata.uid;
+        _C.metadata.name = _C.metadata.name + '@' +  _C.metadata.uid;
         //
         workSpace = DBFiles + _C.metadata.name + "\\";
         //实例化数据库必要变量
@@ -102,19 +105,21 @@ public class Region implements Runnable {
     public Region(config _C) throws Exception {
         //加载配置
         this._C = _C;
+        //
+        TL = new TestTools();
         //连接zookeeper
         regionThrift = new ClientRegionServerImpl();
         regionData = regionThrift.connect(_C.zookeeper.ip + ":" + _C.zookeeper.port,
                 ClientInfoFactory.from(_C.network.ip, _C.network.rpcPort, _C.network.socketPort), _C.network.timeOut);
         //设定UID
         _C.metadata.uid = regionData.uid;
-        System.out.println("[Zookeeper Setting] UID: " + _C.metadata.uid);
+        TL.RInfo("Zookeeper Setting", "UID: ", Integer.toString(_C.metadata.uid));
         //启动接收子线程
         regionLog = new DMSLog(_C);
         //
         RI = new RegionImpl();
         //
-        _C.metadata.name = _C.metadata.name + _C.metadata.uid;
+        _C.metadata.name = _C.metadata.name + '@' + _C.metadata.uid;
         //
         workSpace = DBFiles + _C.metadata.name + "\\";
         //实例化数据库必要变量
@@ -148,6 +153,7 @@ public class Region implements Runnable {
             server.startServer();
             Thread.sleep(1000000);
         } catch (Exception e) {
+            TL.RInfo(0, "Thrift Error in Start");
             e.printStackTrace();
         }
     }
@@ -158,6 +164,7 @@ public class Region implements Runnable {
                 startThriftServer();
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
+                TL.RInfo(0, "Thrift Error in Start");
                 e.printStackTrace();
             }
         });
@@ -175,12 +182,13 @@ public class Region implements Runnable {
                     }
                     if (!temp) {
                         DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
-                        System.out.println("[Flash new Log] " + m.getKey());
-                        System.out.println("[All new Log] " + m.getValue());
+                        TL.RInfo(5, "Flash New Log", m.getKey());
                         for (String s : m.getValue()) {
+                            TL.RInfo(5, "Exec New Log", s);
                             try {
                                 RI.syncExec(s, m.getKey());
                             } catch (TException e) {
+                                TL.RInfo(0, "Sync Error in exec");
                                 e.printStackTrace();
                                 throw new RuntimeException(e);
                             }
@@ -190,6 +198,8 @@ public class Region implements Runnable {
                             Master.Client master = ThriftClient.getForMaster(regionData.ip, regionData.rpcPort);
                             master.finishCopyTable(m.getKey(), _C.metadata.uid);
                         } catch (TException e) {
+                            TL.RInfo(0, "Thrift Error in Sync");
+                            e.printStackTrace();
                             throw new RuntimeException(e);
                         }
                     }
@@ -203,7 +213,7 @@ public class Region implements Runnable {
             }
         }, 1000, 2000));
         try {
-            System.out.println("[Region Server Running] " + _C.metadata.name);
+            TL.RInfo(1, "Region Server Running", _C.metadata.name);
 
             z.start();
             t.start();
@@ -212,6 +222,7 @@ public class Region implements Runnable {
                 wait();
             }
         } catch (InterruptedException e) {
+            TL.RInfo(0, "Region Interrupted");
             regionLog.stopService();
             z.interrupt();
             t.interrupt();
@@ -240,7 +251,7 @@ public class Region implements Runnable {
             }
 
             if (res.status == 1) {
-                System.out.println("[SUCCESS STATE] " + res);
+                TL.RInfo(1, "SUCCESS STATE", String.valueOf(res));
                 regionLog.add(tableName, cmd);
             }
 
@@ -256,6 +267,11 @@ public class Region implements Runnable {
                 syncExec("drop table " + tableName + ";", tableName);
                 regionLog.remove(tableName);
             }
+            if (result)
+                TL.RInfo(1, "SUCCESS SEND");
+            else
+                TL.RInfo(0, "FAILED SEND");
+
             return result;
         }
 
@@ -271,7 +287,7 @@ public class Region implements Runnable {
                 regionLog.remove(tableName);
             }
             if (res.status == 1) {
-                System.out.println("[SUCCESS SYNC STATE] " + res);
+                TL.RInfo(1, "SUCCESS SYNC STATE", String.valueOf(res));
             }
 
         }
