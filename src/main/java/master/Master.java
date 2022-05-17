@@ -219,7 +219,7 @@ public class Master {
         _C.loadYaml();
         Client masterClient = new ClientMasterImpl(new MasterConnectionStrategy());
         masterClient.connect(_C.zookeeper.ip+":"+_C.zookeeper.port, ClientInfoFactory.from(_C.network.ip, _C.network.rpcPort),
-                3000);
+                _C.network.timeOut);
         Thread t1 = new Thread(() -> {
             try {
                 Master master = new Master();
