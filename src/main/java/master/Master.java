@@ -57,9 +57,9 @@ public class Master {
                                     if (!tables.contains(tableName)) {
                                         regionsToTables.get(uid).remove(i);
                                         tablesToRegions.get(tableName).remove(Integer.valueOf(uid));
-                                        isfinish = false;
                                         client.requestCopyTable(clientInfo.ip + ":" + clientInfo.socketPort, tableName, true);
-                                        while (!isfinish) ;//同步
+                                        while(tables.size()==tableSize);
+                                        tableSize = tables.size();
                                         j++;
                                     } else {
                                         i++;
@@ -96,14 +96,16 @@ public class Master {
                     int source_port = regionsInfomation.get(source_uid).rpcPort;
                     Region.Client client = ThriftClient.getForRegionServer(source_ip, source_port);
                     List<Integer> uids = findNMinRegion(1, tablesToRegions.get(tableName));
-                    if (uids.isEmpty()) continue;
                     tablesToRegions.get(tableName).remove(Integer.valueOf(clientInfo.uid));
+                    if (uids.isEmpty()) continue;
                     Integer des_uid = uids.get(0);
                     String des_ip = regionsInfomation.get(des_uid).ip;
                     int des_port = regionsInfomation.get(des_uid).socketPort;
-                    isfinish = false;
+                    int tableSize = regionsToTables.get(des_uid).size();
                     client.requestCopyTable(des_ip + ":" + des_port, tableName, false);
-                    while (!isfinish) ;
+                    while(regionsToTables.get(des_uid).size()==tableSize);
+//                    while (!isfinish) ;
+//                    isfinish = false;
                     /*
                     测试finishCopyTable函数
                      */
@@ -164,9 +166,11 @@ public class Master {
                         int des_uid = l.get(0);
                         ClientInfo des = regionsInfomation.get(des_uid);
                         tablesToRegions.get(tableName).remove(Integer.valueOf(source_uid));
-                        isfinish = false;
+                        int tableSize = regionsToTables.get(des_uid).size();
                         client.requestCopyTable(des.ip + ":" + des.socketPort, tableName, true);
-                        while (!isfinish) ;
+                        while(regionsToTables.get(des_uid).size()==tableSize);
+//                        while (!isfinish) ;
+//                        isfinish = false;
                         /*
                             测试finishCopyTable函数
                         */
