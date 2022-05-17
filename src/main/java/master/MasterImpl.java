@@ -67,6 +67,7 @@ public class MasterImpl implements Master.Iface {
     public void finishCopyTable(String tableName, int uid) {
         master.Master.tablesToRegions.get(tableName).add(uid);
         master.Master.regionsToTables.get(uid).add(tableName);
+        master.Master.isfinish = true;
     }
 
     public static void print() {

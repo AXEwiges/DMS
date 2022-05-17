@@ -24,6 +24,7 @@ public class Master {
     static ConcurrentHashMap<Integer, List<String>> regionsToTables = new ConcurrentHashMap<>();//存储每个region已经存放表
     static ConcurrentHashMap<Integer, ClientInfo> regionsInfomation = new ConcurrentHashMap<>();//存储每个region的信息，key是region的uid
     static ConcurrentHashMap<Integer, Integer> timesOfVisit = new ConcurrentHashMap<>();//存储每个region被访问的次数，用于检测region繁忙
+    static boolean isfinish = false;
 
     static class MasterConnectionStrategy implements ClientConnectionStrategy {
         @Override
@@ -43,6 +44,7 @@ public class Master {
                         if (uid == clientInfo.uid) continue;
                         String source_ip = regionsInfomation.get(uid).ip;
                         int source_port = regionsInfomation.get(uid).rpcPort;
+                        int tableSize = tables.size();
                         if (tables.size() >= avg) break;
                         try {
                             Region.Client client = ThriftClient.getForRegionServer(source_ip, source_port);
@@ -53,12 +55,13 @@ public class Master {
                                     if (!tables.contains(tableName)) {
                                         regionsToTables.get(uid).remove(i);
                                         tablesToRegions.get(tableName).remove(Integer.valueOf(uid));
+                                        isfinish = false;
                                         client.requestCopyTable(clientInfo.ip + ":" + clientInfo.socketPort, tableName, true);
+                                        while (!isfinish) ;//同步
                                         j++;
                                     } else {
                                         i++;
                                     }
-                                    Thread.sleep(1000);
                                     if (tables.size() >= avg) break;
                                 }
                             }
@@ -96,7 +99,9 @@ public class Master {
                     Integer des_uid = uids.get(0);
                     String des_ip = regionsInfomation.get(des_uid).ip;
                     int des_port = regionsInfomation.get(des_uid).socketPort;
+                    isfinish = false;
                     client.requestCopyTable(des_ip + ":" + des_port, tableName, false);
+                    while (!isfinish);
                     /*
                     测试finishCopyTable函数
                      */
@@ -157,7 +162,9 @@ public class Master {
                         int des_uid = l.get(0);
                         ClientInfo des = regionsInfomation.get(des_uid);
                         tablesToRegions.get(tableName).remove(Integer.valueOf(source_uid));
+                        isfinish = false;
                         client.requestCopyTable(des.ip + ":" + des.socketPort, tableName, true);
+                        while (!isfinish);
                         /*
                             测试finishCopyTable函数
                         */
