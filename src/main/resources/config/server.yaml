@@ -2,16 +2,17 @@ appVersion: 1.0.0
 metadata:
   isMaster: False
   uid: 0
-  name: user4
+  name: master
 cluster:
   mainTable: none # The largest/most visited table's name
   maxTables: 18   # The capacity for tables
   neighbor: 0     # One of its neighbor's uid
 network:
+  ip: 10.162.48.219
   timeOut: 3000
-  rpcPort: 2007
-  socketPort: 2008
+  rpcPort: 2005
+  socketPort: 2006
 zookeeper:
-  ip: 127.0.0.1
+  ip: 10.192.115.251
   port: 2181
 

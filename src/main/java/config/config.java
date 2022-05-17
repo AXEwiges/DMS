@@ -28,7 +28,7 @@ public class config {
         this.appVersion = (String) obj.get("appVersion");
         this.metadata = new metadata((boolean)metadata.get("isMaster"), (int)metadata.get("uid"), (String)metadata.get("name"));
         this.cluster = new cluster((String)cluster.get("mainTable"), (int)cluster.get("maxTables"), (int)cluster.get("neighbor"));
-        this.network = new network((int)network.get("timeOut"), (int)network.get("rpcPort"), (int)network.get("socketPort"));
+        this.network = new network((String)network.get("ip"), (int)network.get("timeOut"), (int)network.get("rpcPort"), (int)network.get("socketPort"));
         this.zookeeper = new zookeeper((String)zookeeper.get("ip"), (int)zookeeper.get("port"));
     }
 

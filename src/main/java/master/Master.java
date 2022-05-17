@@ -7,6 +7,7 @@ import common.rpc.ThriftServer;
 import common.zookeeper.Client;
 import common.zookeeper.ClientConnectionStrategy;
 import common.zookeeper.ClientMasterImpl;
+import config.config;
 import lombok.Data;
 import master.rpc.Master.Iface;
 import org.apache.thrift.transport.TTransportException;
@@ -25,6 +26,7 @@ public class Master {
     static ConcurrentHashMap<Integer, ClientInfo> regionsInfomation = new ConcurrentHashMap<>();//存储每个region的信息，key是region的uid
     static ConcurrentHashMap<Integer, Integer> timesOfVisit = new ConcurrentHashMap<>();//存储每个region被访问的次数，用于检测region繁忙
     static boolean isfinish = false;
+    static config _C = new config();
 
     static class MasterConnectionStrategy implements ClientConnectionStrategy {
         @Override
@@ -101,7 +103,7 @@ public class Master {
                     int des_port = regionsInfomation.get(des_uid).socketPort;
                     isfinish = false;
                     client.requestCopyTable(des_ip + ":" + des_port, tableName, false);
-                    while (!isfinish);
+                    while (!isfinish) ;
                     /*
                     测试finishCopyTable函数
                      */
@@ -151,7 +153,7 @@ public class Master {
                     List<String> tables = regionsToTables.get(source_uid);
                     ClientInfo source = regionsInfomation.get(source_uid);
                     Region.Client client = ThriftClient.getForRegionServer(source.ip,
-                            5099);
+                            source.rpcPort);
                     /*
                      * 把一半的表存储在其他的regionserver上
                      */
@@ -164,7 +166,7 @@ public class Master {
                         tablesToRegions.get(tableName).remove(Integer.valueOf(source_uid));
                         isfinish = false;
                         client.requestCopyTable(des.ip + ":" + des.socketPort, tableName, true);
-                        while (!isfinish);
+                        while (!isfinish) ;
                         /*
                             测试finishCopyTable函数
                         */
@@ -214,8 +216,9 @@ public class Master {
 
     public static void main(String[] args)
             throws IOException, InterruptedException, KeeperException, TTransportException {
+        _C.loadYaml();
         Client masterClient = new ClientMasterImpl(new MasterConnectionStrategy());
-        masterClient.connect("127.0.0.1:2181", ClientInfoFactory.from("127.0.0.1", 9090),
+        masterClient.connect(_C.zookeeper.ip+":"+_C.zookeeper.port, ClientInfoFactory.from(_C.network.ip, _C.network.rpcPort),
                 3000);
         Thread t1 = new Thread(() -> {
             try {
