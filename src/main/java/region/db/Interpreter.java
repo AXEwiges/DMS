@@ -139,7 +139,8 @@ public class Interpreter {
                         parse_delete(result);
                         break;
                     case "quit":
-                        parse_quit(result, reader);
+                        parse_quit(result,
+                                reader);
                         break;
                     case "execfile":
                         parse_sql_file(result);
@@ -200,6 +201,8 @@ public class Interpreter {
                     return parse_sql_file(result);
                 case "show":
                     return parse_show(result);
+                case "quit":
+                    return parse_quit(result);
                 default:
                     return new execResult(0, "Can't identify " + tokens[0] + "\n", 0);
             }
@@ -521,6 +524,15 @@ public class Interpreter {
         reader.close();
         System.out.println("Bye");
         System.exit(0);
+    }
+
+    private execResult parse_quit(String statement) throws Exception { //重载
+        String[] tokens = statement.split(" ");
+        if (tokens.length != 1)
+            return new execResult(0, "Extra parameters in quit", 1);
+        api.store();
+        return new execResult(1, "Bye", 1);
+//        System.exit(0);
     }
 
     private execResult parse_sql_file(String statement) throws Exception {
