@@ -2,7 +2,6 @@ package master;
 
 import common.meta.ClientInfo;
 import common.rpc.ThriftClient;
-import common.zookeeper.Client;
 import config.config;
 import master.rpc.Master;
 import org.apache.thrift.TException;
@@ -14,9 +13,9 @@ import region.RegionFactory;
 import region.rpc.execResult;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static region.Utils.DBFiles;
 
 class MasterTest {

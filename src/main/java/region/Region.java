@@ -84,7 +84,7 @@ public class Region implements Runnable {
         RI = new RegionImpl();
         //实例化数据库必要变量
         DMSDB x = new DMSDB(DBFiles + _C.metadata.name + "\\");
-        DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
+        DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\" + _C.metadata.uid + "\\");
         File A = new File(DMSDB.DBDIR.storageSpace);
         if (!A.isDirectory()) A.mkdir();
         //定义独立interpreter
@@ -107,7 +107,7 @@ public class Region implements Runnable {
         RI = new RegionImpl();
         //实例化数据库必要变量
         DMSDB x = new DMSDB(DBFiles + _C.metadata.name + "\\");
-        DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
+        DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\" + _C.metadata.uid + "\\");
         File A = new File(DMSDB.DBDIR.storageSpace);
         if (!A.isDirectory()) A.mkdir();
         //定义独立interpreter
