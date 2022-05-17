@@ -187,7 +187,7 @@ public class Region implements Runnable {
                         }
                         regionLog.testOutput();
                         try {
-                            Master.Client master = ThriftClient.getForMaster("127.0.0.1", 9090);
+                            Master.Client master = ThriftClient.getForMaster(regionData.ip, regionData.rpcPort);
                             master.finishCopyTable(m.getKey(), _C.metadata.uid);
                         } catch (TException e) {
                             throw new RuntimeException(e);
