@@ -167,6 +167,7 @@ public class Region implements Runnable {
                             try {
                                 RI.syncExec(s, m.getKey());
                             } catch (TException e) {
+                                e.printStackTrace();
                                 throw new RuntimeException(e);
                             }
                         }
