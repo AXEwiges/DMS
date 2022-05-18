@@ -20,9 +20,21 @@ import java.util.concurrent.ConcurrentHashMap;
  * */
 @Data
 class logLoad implements Serializable {
+    /**
+     * 传输的日志组成列表
+     * */
     public List<String> Log;
+    /**
+     * 表名信息，用于同步时加入
+     * */
     public String tableName;
+    /**
+     * 传输检查点
+     * */
     public Integer checkPoint;
+    /**
+     * 传输的Type标识符，作为特殊
+     * */
     public Integer Type;
 
     public logLoad(List<String> strings, String name, Integer integer, Integer type) {
@@ -55,22 +67,24 @@ public class DMSLog {
      * */
     public syncRecvThread monitorThread;
     /**
-     * 必要的config数据
+     * 必要的日志config数据
      * */
     public config _LC;
     /**
-     * 加入日志打印
+     * 颜色打印功能的具体对象
      * */
-//    private Logger logger = Logger.getLogger(DMSLog.class);
+    public TestTools TL;
+
     public DMSLog(config _C){
         _LC = _C;
+        TL = new TestTools();
 
         mainLog = new ConcurrentHashMap<>();
         bufferLog = new ConcurrentHashMap<>();
         tempLog = new ConcurrentHashMap<>();
         checkPoints = new ConcurrentHashMap<>();
         monitorThread = new syncRecvThread();
-//        BasicConfigurator.configure();
+
         monitorThread.start();
     }
     /**
@@ -79,7 +93,7 @@ public class DMSLog {
      * @param statement 语句
      * */
     public void add(String tableName, String statement){
-        System.out.println("[Add new statement] " + _LC.metadata.name + " " + statement);
+        TL.RInfo("Add new statement", _LC.metadata.name, " ", statement);
         if(!mainLog.containsKey(tableName)){
             mainLog.put(tableName, new ArrayList<>());
             checkPoints.put(tableName, 0);
@@ -87,7 +101,6 @@ public class DMSLog {
         mainLog.get(tableName).add(statement);
         Integer integer = checkPoints.get(tableName) + 1;
         checkPoints.put(tableName, integer);
-        System.out.println("[All in statement] " + mainLog.get(tableName));
     }
 
     public void stopService() {
@@ -109,12 +122,12 @@ public class DMSLog {
 
         @Override
         public void run() {
-            System.out.println("[Start SyncData] " + socket.toString() + " Table: " + payload.tableName);
+            TL.RInfo(3, "Start SyncData", socket.toString(), "Send Table: ", payload.tableName);
             try{
                 ObjectOutputStream sendOut = new ObjectOutputStream(socket.getOutputStream());
                 sendOut.writeObject(payload);
                 sendOut.flush();
-                System.out.println("[End SyncData] " + payload.tableName);
+                TL.RInfo(3, "End SyncData", payload.tableName);
             } catch (Exception ignored) {
                 try {
                     socket.close();
@@ -133,7 +146,7 @@ public class DMSLog {
         public syncRecvThread() {
             try {
                 this.server = new ServerSocket(_LC.network.socketPort);
-                System.out.println("[Start Thread SyncRecv]");
+                TL.RInfo(2, "Start Thread SyncRecv");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -141,12 +154,13 @@ public class DMSLog {
 
         @Override
         public void run() {
-            System.out.println("[Start Recv Process, Listening] " + server.toString());
+            TL.RInfo(2, "Start Recv Process");
+            TL.RInfo(2, "Listening", server.toString());
             while(true){
                 Socket recv = null;
                 try{
                     recv = server.accept();
-                    System.out.println("[SyncDB command from] " + recv.getRemoteSocketAddress());
+                    TL.RInfo(2, "SyncDB command from", String.valueOf(recv.getRemoteSocketAddress()));
                     Thread t = new syncDB(recv);
                     t.start();
                 } catch (Exception ignored) {
@@ -171,21 +185,21 @@ public class DMSLog {
         }
         @Override
         public void run() {
-            System.out.println("[Start syncDB]");
+            TL.RInfo(2, "Start syncDB-------");
             try{
                 ObjectInputStream recvInputStream = new ObjectInputStream(socket.getInputStream());
                 try{
                     logLoad log = (logLoad)recvInputStream.readObject();
                     synchronized(this){
-                        System.out.println("[Running syncLog]");
+                        TL.RInfo(2, "Running syncLog-----");
                         for(String statement : log.Log)
                             add(log.tableName, statement);
-                        System.out.println("[Complete syncLog]");
+                        TL.RInfo(2, "Complete syncLog-----");
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                System.out.println("[Complete syncDB]");
+                TL.RInfo(2, "Complete syncDB------");
             } catch(Exception e){
                 e.printStackTrace();
             }
@@ -201,7 +215,7 @@ public class DMSLog {
      * */
     public synchronized boolean transfer(String ip, String port, String tableName) {
         logLoad payload = new logLoad(mainLog.get(tableName), tableName, checkPoints.get(tableName), 0);
-        System.out.println("[Payload ready, Wait for SyncData]");
+        TL.RInfo(3, "Payload ready, Waiting");
         try {
             syncSendThread sender = new syncSendThread(payload, new Socket(ip, Integer.parseInt(port)));
             Thread waiter = new Thread(sender);
@@ -214,20 +228,25 @@ public class DMSLog {
         }
     }
     /**
-     * 用于移动日志
+     * 用于移动日志时删除原表格
+     * @param tableName 需要被删除的表名
      * */
     public synchronized void remove(String tableName){
         mainLog.remove(tableName);
         checkPoints.remove(tableName);
     }
-
+    /**
+     * 用于打印所有的表，用于测试
+     * */
     public void testOutput(){
-        System.out.println("[Test Output] " + _LC.metadata.name);
+        TL.RInfo(4, "Test Output", _LC.metadata.name);
         for(Map.Entry<String, List<String>> m : mainLog.entrySet()){
-            System.out.println(m.getKey());
+            TL.RInfo(4, "Table Name", m.getKey());
+            TL.RInfo(6, "--------------------");
             for(String s : m.getValue()){
-                System.out.println(s);
+                TL.RInfo(4, "Table Log", s);
             }
+            TL.RInfo(6, "--------------------");
         }
     }
 }

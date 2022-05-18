@@ -7,6 +7,12 @@ import java.util.List;
 import java.util.UUID;
 
 public class RegionFactory {
+    /**
+     * 用于测试时批量生成可用日志
+     * @param num 生成日志的数量
+     *
+     * @return configs 批量的日志信息
+     * */
     public List<config> regionServerConfigFactory(int num) {
         List<config> configs = new ArrayList<>();
         for (int i = 0; i < num; i++) {

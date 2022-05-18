@@ -1,5 +1,6 @@
 package region;
 
+import common.meta.TestTools;
 import config.config;
 import org.apache.thrift.TException;
 import org.apache.zookeeper.KeeperException;
@@ -45,7 +46,7 @@ class RegionTest {
         _CB.network.socketPort = 2023;
         _CB.metadata.name = "Test RegionServer B";
 
-        try{
+        try {
             Region A = new Region(_CA);
             Region B = new Region(_CB);
 
@@ -89,6 +90,8 @@ class RegionTest {
 
     @Test
     void statementExecTest() {
+        TestTools TL = new TestTools();
+
         config _CA = new config();
         _CA.loadYaml();
 
@@ -105,7 +108,7 @@ class RegionTest {
 
         clearPath();
 
-        try{
+        try {
             Region A = new Region(_CA);
             Region B = new Region(_CB);
 
@@ -117,33 +120,32 @@ class RegionTest {
 
             UUID uuid = UUID.randomUUID();
 
-            System.out.println("[Test UID] " + uuid);
+            TL.RInfo("Test UID", String.valueOf(uuid));
 
-            Map<String, String> testCMD = new LinkedHashMap<String, String>(){{
+            Map<String, String> testCMD = new LinkedHashMap<String, String>() {{
                 put("create table " + "TEST_" + uuid + " (ID int, Name char(32), email char(255), primary key(ID));", "Create table " + "TEST_" + uuid + " successfully\n");
-                put("insert into " +"TEST_" + uuid + " values (123, 'CMD', 'TEST@gmail.com');", "Insert successfully\n");
+                put("insert into " + "TEST_" + uuid + " values (123, 'CMD', 'TEST@gmail.com');", "Insert successfully\n");
                 put("create table " + "TEST_" + uuid + "_1" + " (ID int, Name char(32), email char(255), primary key(ID));", "Create table " + "TEST_" + uuid + "_1" + " successfully\n");
                 put("insert into " + "TEST_" + uuid + "_1" + " values (123, 'CMD', 'TEST@gmail.com');", "Insert successfully\n");
                 put("select * from " + "TEST_" + uuid + ";", "");
             }};
 
-            for(Map.Entry<String, String> statement : testCMD.entrySet()) {
-                System.out.println("[Test Statement] " + statement.getKey());
+            for (Map.Entry<String, String> statement : testCMD.entrySet()) {
+                TL.RInfo("Test Statement", statement.getKey());
                 execResult execRes = B.RI.statementExec(statement.getKey(), "TEST_" + uuid);
-                if (Objects.equals(execRes.result, statement.getValue())){
-                    System.out.println("[Statement Test Successful] " + execRes);
-                }
-                else
-                    System.out.println("[Statement Test Failed] " + execRes);
+                if (Objects.equals(execRes.result, statement.getValue())) {
+                    TL.RInfo("Statement Test Successful", String.valueOf(execRes));
+                } else
+                    TL.RInfo("Statement Test Failed", String.valueOf(execRes));
             }
 
             boolean result = B.RI.requestCopyTable("127.0.0.1:" + _CA.network.socketPort, "TEST_" + uuid, true);
 
-            System.out.println("[Transport Result] " + result);
+            TL.RInfo("Transport Result", String.valueOf(result));
 
             execResult execRes = A.RI.statementExec("show tables", "TEST_" + uuid + ";");
 
-            System.out.println("[Show Result] " + execRes);
+            TL.RInfo("Show Result", String.valueOf(execRes));
 
             A.regionLog.testOutput();
 

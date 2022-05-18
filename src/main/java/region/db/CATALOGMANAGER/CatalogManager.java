@@ -377,7 +377,6 @@ public class CatalogManager {
     }
 
     public static boolean create_index(Index newIndex) throws NullPointerException{
-        System.out.println("ENTER");
         try{
             Table tmpTable = get_table(newIndex.tableName);
             tmpTable.indexVector.addElement(newIndex);
