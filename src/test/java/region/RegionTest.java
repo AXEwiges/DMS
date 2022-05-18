@@ -1,7 +1,7 @@
 package region;
 
 import common.meta.TestTools;
-import config.Config;
+import config.config;
 import org.apache.thrift.TException;
 import org.apache.zookeeper.KeeperException;
 import org.junit.jupiter.api.AfterEach;
@@ -32,14 +32,14 @@ class RegionTest {
 
     @Test
     void regionCopyTable() throws IOException {
-        Config _CA = new Config();
+        config _CA = new config();
         _CA.loadYaml();
 
         _CA.network.rpcPort = 2020;
         _CA.network.socketPort = 2021;
         _CA.metadata.name = "Test RegionServer A";
 
-        Config _CB = new Config();
+        config _CB = new config();
         _CB.loadYaml();
 
         _CB.network.rpcPort = 2022;
@@ -92,14 +92,14 @@ class RegionTest {
     void statementExecTest() {
         TestTools TL = new TestTools();
 
-        Config _CA = new Config();
+        config _CA = new config();
         _CA.loadYaml();
 
         _CA.network.rpcPort = 2020;
         _CA.network.socketPort = 2021;
         _CA.metadata.name = "Test RegionServer A";
 
-        Config _CB = new Config();
+        config _CB = new config();
         _CB.loadYaml();
 
         _CB.network.rpcPort = 2022;

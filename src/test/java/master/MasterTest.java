@@ -2,7 +2,7 @@ package master;
 
 import common.meta.ClientInfo;
 import common.rpc.ThriftClient;
-import config.Config;
+import config.config;
 import master.rpc.Master;
 import org.apache.thrift.TException;
 import org.junit.jupiter.api.AfterEach;
@@ -51,7 +51,7 @@ class MasterTest {
     @Test
     void testLoadBalancing() {
         RegionFactory regionFactory = new RegionFactory();
-        List<Config> configs = regionFactory.regionServerConfigFactory(5);
+        List<config> configs = regionFactory.regionServerConfigFactory(5);
 
         clearPath();
 
@@ -59,7 +59,7 @@ class MasterTest {
             //方便操作单个Region线程的接口
             List<Thread> regionThreads = new ArrayList<>();
 
-            for(Config C : configs)
+            for(config C : configs)
                 regionThreads.add(new Thread(new Region(C)));
 
             for(Thread thread : regionThreads)

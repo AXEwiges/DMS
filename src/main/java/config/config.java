@@ -6,7 +6,7 @@ import java.util.Map;
 import lombok.Data;
 
 @Data
-public class Config {
+public class config {
     public String appVersion;
     public metadata metadata;
     public cluster cluster;
@@ -32,7 +32,7 @@ public class Config {
     }
 
     public static void main(String[] args) {
-        Config a = new Config();
+        config a = new config();
         a.loadYaml();
         System.out.println(a);
     }

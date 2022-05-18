@@ -7,7 +7,7 @@ import common.rpc.ThriftServer;
 import common.zookeeper.Client;
 import common.zookeeper.ClientConnectionStrategy;
 import common.zookeeper.ClientMasterImpl;
-import config.Config;
+import config.config;
 import lombok.Data;
 import master.rpc.Master.Iface;
 import org.apache.thrift.transport.TTransportException;
@@ -26,7 +26,7 @@ public class Master {
     static ConcurrentHashMap<Integer, ClientInfo> regionsInfomation = new ConcurrentHashMap<>();//存储每个region的信息，key是region的uid
     static ConcurrentHashMap<Integer, Integer> timesOfVisit = new ConcurrentHashMap<>();//存储每个region被访问的次数，用于检测region繁忙
     static boolean isfinish = false;
-    static Config _C = new Config();
+    static config _C = new config();
 
     static class MasterConnectionStrategy implements ClientConnectionStrategy {
         @Override

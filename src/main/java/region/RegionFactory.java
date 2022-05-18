@@ -1,6 +1,6 @@
 package region;
 
-import config.Config;
+import config.config;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,10 +12,10 @@ public class RegionFactory {
      *
      * @return configs 批量的日志信息
      * */
-    public List<Config> regionServerConfigFactory(int num) {
-        List<Config> configs = new ArrayList<>();
+    public List<config> regionServerConfigFactory(int num) {
+        List<config> configs = new ArrayList<>();
         for (int i = 0; i < num; i++) {
-            Config _A = new Config();
+            config _A = new config();
             _A.loadYaml();
             _A.metadata.name = "Test Server " + (i + 1);
             _A.network.rpcPort = 2000 + i * 3;
