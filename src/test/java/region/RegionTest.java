@@ -1,7 +1,7 @@
 package region;
 
 import common.meta.TestTools;
-import config.config;
+import config.Config;
 import org.apache.thrift.TException;
 import org.apache.zookeeper.KeeperException;
 import org.junit.jupiter.api.AfterEach;
@@ -32,14 +32,14 @@ class RegionTest {
 
     @Test
     void regionCopyTable() throws IOException {
-        config _CA = new config();
+        Config _CA = new Config();
         _CA.loadYaml();
 
         _CA.network.rpcPort = 2020;
         _CA.network.socketPort = 2021;
         _CA.metadata.name = "Test RegionServer A";
 
-        config _CB = new config();
+        Config _CB = new Config();
         _CB.loadYaml();
 
         _CB.network.rpcPort = 2022;
@@ -92,14 +92,14 @@ class RegionTest {
     void statementExecTest() {
         TestTools TL = new TestTools();
 
-        config _CA = new config();
+        Config _CA = new Config();
         _CA.loadYaml();
 
         _CA.network.rpcPort = 2020;
         _CA.network.socketPort = 2021;
         _CA.metadata.name = "Test RegionServer A";
 
-        config _CB = new config();
+        Config _CB = new Config();
         _CB.loadYaml();
 
         _CB.network.rpcPort = 2022;
@@ -120,7 +120,7 @@ class RegionTest {
 
             UUID uuid = UUID.randomUUID();
 
-            TL.RInfo("Test UID", String.valueOf(uuid));
+            TL.RInfo(6, "Test UID", String.valueOf(uuid));
 
             Map<String, String> testCMD = new LinkedHashMap<String, String>() {{
                 put("create table " + "TEST_" + uuid + " (ID int, Name char(32), email char(255), primary key(ID));", "Create table " + "TEST_" + uuid + " successfully\n");
@@ -131,21 +131,21 @@ class RegionTest {
             }};
 
             for (Map.Entry<String, String> statement : testCMD.entrySet()) {
-                TL.RInfo("Test Statement", statement.getKey());
+                TL.RInfo(6, "Test Statement", statement.getKey());
                 execResult execRes = B.RI.statementExec(statement.getKey(), "TEST_" + uuid);
                 if (Objects.equals(execRes.result, statement.getValue())) {
-                    TL.RInfo("Statement Test Successful", String.valueOf(execRes));
+                    TL.RInfo(1, "Statement Test Successful", String.valueOf(execRes));
                 } else
-                    TL.RInfo("Statement Test Failed", String.valueOf(execRes));
+                    TL.RInfo(0, "Statement Test Failed", String.valueOf(execRes));
             }
 
             boolean result = B.RI.requestCopyTable("127.0.0.1:" + _CA.network.socketPort, "TEST_" + uuid, true);
 
-            TL.RInfo("Transport Result", String.valueOf(result));
+            TL.RInfo(4, "Transport Result", String.valueOf(result));
 
             execResult execRes = A.RI.statementExec("show tables", "TEST_" + uuid + ";");
 
-            TL.RInfo("Show Result", String.valueOf(execRes));
+            TL.RInfo(4, "Show Result", String.valueOf(execRes));
 
             A.regionLog.testOutput();
 

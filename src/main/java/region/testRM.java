@@ -2,7 +2,7 @@ package region;
 
 import common.meta.ClientInfo;
 import common.rpc.ThriftClient;
-import config.config;
+import config.Config;
 import master.rpc.Master;
 import org.apache.thrift.TException;
 import region.rpc.execResult;
@@ -35,7 +35,7 @@ public class testRM {
 
     public static void main(String[] args) {
         RegionFactory regionFactory = new RegionFactory();
-        List<config> configs = regionFactory.regionServerConfigFactory(5);
+        List<Config> configs = regionFactory.regionServerConfigFactory(5);
 
         clearPath();
 
@@ -43,7 +43,7 @@ public class testRM {
             //方便操作单个Region线程的接口
             List<Thread> regionThreads = new ArrayList<>();
 
-            for(config C : configs)
+            for(Config C : configs)
                 regionThreads.add(new Thread(new Region(C)));
 
             for(Thread thread : regionThreads)

@@ -5,7 +5,7 @@ import common.rpc.ThriftClient;
 import common.rpc.ThriftServer;
 import common.zookeeper.Client;
 import common.zookeeper.ClientRegionServerImpl;
-import config.config;
+import config.Config;
 import lombok.Data;
 import master.rpc.Master;
 import org.apache.log4j.Logger;
@@ -44,11 +44,11 @@ public class Region implements Runnable {
     /**
      * 加载服务器配置信息
      */
-    public config _C;
+    public Config _C;
     /**
      * 用于储存全部的表名
      */
-    public List<table> tables = new ArrayList<>();
+    public List<Table> tables = new ArrayList<>();
     /**
      * 用于储存全部的log信息，用于同步
      */
@@ -72,7 +72,7 @@ public class Region implements Runnable {
 
     public Region() throws Exception {
         //加载配置
-        this._C = new config();
+        this._C = new Config();
         _C.loadYaml();
         //
         TL = new TestTools();
@@ -102,7 +102,7 @@ public class Region implements Runnable {
         interpreter = new Interpreter();
     }
 
-    public Region(config _C) throws Exception {
+    public Region(Config _C) throws Exception {
         //加载配置
         this._C = _C;
         //
@@ -134,7 +134,7 @@ public class Region implements Runnable {
     }
 
     public static void main(String[] args) throws Exception {
-        config _CA = new config();
+        Config _CA = new Config();
 
         _CA.loadYaml();
 
@@ -175,7 +175,7 @@ public class Region implements Runnable {
                 boolean temp;
                 for (Map.Entry<String, List<String>> m : regionLog.mainLog.entrySet()) {
                     temp = false;
-                    for (table i : tables) {
+                    for (Table i : tables) {
                         if (Objects.equals(m.getKey(), i.name)) {
                             temp = true;
                             break;
@@ -207,7 +207,7 @@ public class Region implements Runnable {
                 synchronized (this) {
                     tables.clear();
                     for(Map.Entry<String, List<String>> m : regionLog.mainLog.entrySet())
-                        tables.add(new table(m.getKey()));
+                        tables.add(new Table(m.getKey()));
                 }
 
             }
@@ -255,11 +255,11 @@ public class Region implements Runnable {
             execResult res = interpreter.runSingleCommand(cmd);
 
             if (res.type == 2) {
-                tables.add(new table(tableName));
+                tables.add(new Table(tableName));
             }
 
             if (res.type == 3) {
-                tables.remove(new table(tableName));
+                tables.remove(new Table(tableName));
                 regionLog.remove(tableName);
             }
 
@@ -307,9 +307,9 @@ public class Region implements Runnable {
             execResult res = interpreter.runSingleCommand(cmd);
 
             if (res.type == 2)
-                tables.add(new table(tableName));
+                tables.add(new Table(tableName));
             if (res.type == 3) {
-                tables.remove(new table(tableName));
+                tables.remove(new Table(tableName));
                 regionLog.remove(tableName);
             }
             if (res.status == 1) {

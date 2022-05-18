@@ -1,6 +1,6 @@
 package common.meta;
 
-import config.config;
+import config.Config;
 import lombok.Data;
 
 import java.io.IOException;
@@ -69,13 +69,13 @@ public class DMSLog {
     /**
      * 必要的日志config数据
      * */
-    public config _LC;
+    public Config _LC;
     /**
      * 颜色打印功能的具体对象
      * */
     public TestTools TL;
 
-    public DMSLog(config _C){
+    public DMSLog(Config _C){
         _LC = _C;
         TL = new TestTools();
 
