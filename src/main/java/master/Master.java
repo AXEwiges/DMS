@@ -129,7 +129,7 @@ public class Master {
             Iface handler = new MasterImpl();
             master.rpc.Master.Processor<Iface> processor = new master.rpc.Master.Processor<>(
                     handler);
-            ThriftServer server = new ThriftServer(processor, 9090);
+            ThriftServer server = new ThriftServer(processor, _C.network.rpcPort);
             server.startServer();
             Thread.sleep(1000000);
         } catch (Exception e) {
@@ -244,7 +244,7 @@ public class Master {
                 timer.schedule(new TimerTask() {
                     @Override
                     public void run() {
-                        System.out.println("检查是否超载");
+                        System.out.println("检查是否繁忙");
                         MasterImpl.print();
                         Master.reset();
                     }
