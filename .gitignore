@@ -31,5 +31,5 @@ target
 
 # logs
 /logs
-/src/main/java/region/db/DBFiles
+/src/main/java/region/db/DBFiles/*
 /src/main/java/region/Utils.java
