@@ -41,7 +41,7 @@
 ### 运行 Region  Server
 
 1. 参考上节内容，修改配置文件中的字段。注意，如果是在同一物理机上运行 master 或 region server，端口不能重复。
-2. 确保 `src/main/java/region/db/DMSDB.java` 中 `storageSpace` 的值为已存在的路径。
+2. 确保 `src/main/java/region/Utils.java` 中`DBFiles` 的值为已存在的路径，这个文件夹存储Minisql生成的表数据和index数据。
 3. 运行 `java.region.Region.main()` 方法。
 
 ### 运行 Java 客户端
