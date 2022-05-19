@@ -1,9 +1,6 @@
 package region;
 
-import common.meta.ClientInfo;
-import common.meta.ClientInfoFactory;
-import common.meta.DMSLog;
-import common.meta.table;
+import common.meta.*;
 import common.rpc.ThriftClient;
 import common.rpc.ThriftServer;
 import common.zookeeper.Client;
@@ -68,24 +65,30 @@ public class Region implements Runnable {
      * 存储目录
      */
     public String workSpace;
+    /**
+     * 彩色打印
+     * */
+    public TestTools TL;
 
     public Region() throws Exception {
         //加载配置
         this._C = new config();
         _C.loadYaml();
+        //
+        TL = new TestTools();
         //连接zookeeper
         regionThrift = new ClientRegionServerImpl();
         regionData = regionThrift.connect(_C.zookeeper.ip + ":" + _C.zookeeper.port,
                 ClientInfoFactory.from(_C.network.ip, _C.network.rpcPort, _C.network.socketPort), _C.network.timeOut);
         //设定UID
         _C.metadata.uid = regionData.uid;
-        System.out.println("[Zookeeper Setting] UID: " + _C.metadata.uid);
+        TL.RInfo("Zookeeper Setting", "UID: ", Integer.toString(_C.metadata.uid));
         //启动接收子线程
         regionLog = new DMSLog(_C);
         //暴露接口
         RI = new RegionImpl();
         //
-        _C.metadata.name = _C.metadata.name + _C.metadata.uid;
+        _C.metadata.name = _C.metadata.name + '@' +  _C.metadata.uid;
         //
         workSpace = DBFiles + _C.metadata.name + "\\";
         //实例化数据库必要变量
@@ -102,19 +105,21 @@ public class Region implements Runnable {
     public Region(config _C) throws Exception {
         //加载配置
         this._C = _C;
+        //
+        TL = new TestTools();
         //连接zookeeper
         regionThrift = new ClientRegionServerImpl();
         regionData = regionThrift.connect(_C.zookeeper.ip + ":" + _C.zookeeper.port,
                 ClientInfoFactory.from(_C.network.ip, _C.network.rpcPort, _C.network.socketPort), _C.network.timeOut);
         //设定UID
         _C.metadata.uid = regionData.uid;
-        System.out.println("[Zookeeper Setting] UID: " + _C.metadata.uid);
+        TL.RInfo("Zookeeper Setting", "UID: ", Integer.toString(_C.metadata.uid));
         //启动接收子线程
         regionLog = new DMSLog(_C);
         //
         RI = new RegionImpl();
         //
-        _C.metadata.name = _C.metadata.name + _C.metadata.uid;
+        _C.metadata.name = _C.metadata.name + '@' + _C.metadata.uid;
         //
         workSpace = DBFiles + _C.metadata.name + "\\";
         //实例化数据库必要变量
@@ -148,22 +153,25 @@ public class Region implements Runnable {
             server.startServer();
             Thread.sleep(1000000);
         } catch (Exception e) {
+            TL.RInfo(0, "Thrift Error in Start");
             e.printStackTrace();
         }
     }
 
     public void run() {
+        // Thrift Server 线程
         Thread z = new Thread(() -> {
             try {
                 startThriftServer();
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
+                TL.RInfo(0, "Thrift Error in Start");
                 e.printStackTrace();
             }
         });
+        // Log 同步线程
         Thread t = new Thread(() -> timer.schedule(new TimerTask() {
             public void run() {
-//                    System.out.println("[Timed Check Log]");
                 boolean temp;
                 for (Map.Entry<String, List<String>> m : regionLog.mainLog.entrySet()) {
                     temp = false;
@@ -175,21 +183,23 @@ public class Region implements Runnable {
                     }
                     if (!temp) {
                         DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
-                        System.out.println("[Flash new Log] " + m.getKey());
-                        System.out.println("[All new Log] " + m.getValue());
+                        TL.RInfo(5, "Flash New Log", m.getKey());
                         for (String s : m.getValue()) {
+                            TL.RInfo(5, "Exec New Log", s);
                             try {
                                 RI.syncExec(s, m.getKey());
                             } catch (TException e) {
+                                TL.RInfo(0, "Sync Error in exec");
                                 e.printStackTrace();
                                 throw new RuntimeException(e);
                             }
                         }
-                        regionLog.testOutput();
                         try {
                             Master.Client master = ThriftClient.getForMaster(regionData.ip, regionData.rpcPort);
                             master.finishCopyTable(m.getKey(), _C.metadata.uid);
                         } catch (TException e) {
+                            TL.RInfo(0, "Thrift CallBack Error");
+                            e.printStackTrace();
                             throw new RuntimeException(e);
                         }
                     }
@@ -203,7 +213,7 @@ public class Region implements Runnable {
             }
         }, 1000, 2000));
         try {
-            System.out.println("[Region Server Running] " + _C.metadata.name);
+            TL.RInfo(1, "Region Server Running", _C.metadata.name);
 
             z.start();
             t.start();
@@ -212,6 +222,7 @@ public class Region implements Runnable {
                 wait();
             }
         } catch (InterruptedException e) {
+            TL.RInfo(0, "Region Interrupted");
             regionLog.stopService();
             z.interrupt();
             t.interrupt();
@@ -219,11 +230,24 @@ public class Region implements Runnable {
         }
     }
 
+    /**
+     * 改变工作目录，尽可能确保不会冲突
+     * */
     public void changeWorkSpace() {
         DMSDB.changeDIR(workSpace);
     }
 
+    /**
+     * 实现的Thrift具体接口
+     * */
     public class RegionImpl implements Iface {
+        /**
+         * 执行一句语句，并返回结果
+         * @param cmd 执行的语句
+         * @param tableName 表名
+         *
+         * @return res 一个{@code execResult}结构体
+         * */
         @Override
         public execResult statementExec(String cmd, String tableName) throws TException {
             changeWorkSpace();
@@ -240,13 +264,21 @@ public class Region implements Runnable {
             }
 
             if (res.status == 1) {
-                System.out.println("[SUCCESS STATE] " + res);
+                TL.RInfo(1, "SUCCESS STATE", String.valueOf(res));
                 regionLog.add(tableName, cmd);
             }
 
             return res;
         }
 
+        /**
+         * 向某个目标服务器发送同步数据
+         * @param destination 目的地字符串
+         * @param tableName 表名
+         * @param isMove 是否完全迁移
+         *
+         * @return result 布尔型数据，表示是否成功
+         * */
         @Override
         public boolean requestCopyTable(String destination, String tableName, boolean isMove) throws TException {
             DMSDB.changeDIR(DBFiles + _C.metadata.name + "\\");
@@ -256,9 +288,19 @@ public class Region implements Runnable {
                 syncExec("drop table " + tableName + ";", tableName);
                 regionLog.remove(tableName);
             }
+            if (result)
+                TL.RInfo(1, "SUCCESS SEND");
+            else
+                TL.RInfo(0, "FAILED SEND");
+
             return result;
         }
 
+        /**
+         * 内部执行类，用于日志接收后的原地复读
+         * @param cmd 执行的指令
+         * @param tableName 表名
+         * */
         public void syncExec(String cmd, String tableName) throws TException {
             changeWorkSpace();
 
@@ -271,11 +313,17 @@ public class Region implements Runnable {
                 regionLog.remove(tableName);
             }
             if (res.status == 1) {
-                System.out.println("[SUCCESS SYNC STATE] " + res);
+                TL.RInfo(1, "SUCCESS SYNC STATE", String.valueOf(res));
             }
-
         }
 
+        /**
+         * 用于向目标服务器立即触发同步使用的指令
+         * @param destination 目的地址
+         * @param tableName 表名
+         *
+         * @return true 默认返回真值，不做任何处理
+         * */
         @Override
         public boolean copyTable(String destination, String tableName) throws IOException, InterruptedException {
             String[] address = destination.split(":");
