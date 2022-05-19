@@ -256,11 +256,20 @@ public class Region implements Runnable {
 
             if (res.type == 2) {
                 tables.add(new table(tableName));
+                if (res.status == 1) {
+                    TL.RInfo(1, "SUCCESS STATE", String.valueOf(res));
+                    regionLog.add(tableName, cmd);
+                }
+                return res;
             }
 
             if (res.type == 3) {
-                tables.remove(new table(tableName));
                 regionLog.remove(tableName);
+                tables.remove(new table(tableName));
+                if (res.status == 1) {
+                    TL.RInfo(1, "SUCCESS STATE", String.valueOf(res));
+                }
+                return res;
             }
 
             if (res.status == 1) {
@@ -306,14 +315,18 @@ public class Region implements Runnable {
 
             execResult res = interpreter.runSingleCommand(cmd);
 
-            if (res.type == 2)
+            if (res.type == 2) {
                 tables.add(new table(tableName));
+                return;
+            }
             if (res.type == 3) {
-                tables.remove(new table(tableName));
                 regionLog.remove(tableName);
+                tables.remove(new table(tableName));
+                return;
             }
             if (res.status == 1) {
                 TL.RInfo(1, "SUCCESS SYNC STATE", String.valueOf(res));
+                return;
             }
         }
 
