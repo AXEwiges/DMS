@@ -19,6 +19,11 @@ class MyExec {
     String result;
 }
 
+class Config {
+    public static String ip = "127.0.0.1";
+    public static int port = 9092;
+}
+
 public class client {
     static final int maxBufferSize = 100;
     static LinkedHashMap<String, List<ClientInfo>> buffer = new LinkedHashMap<>() {
@@ -36,7 +41,7 @@ public class client {
             System.out.println("欢迎来到分布式数据库。");
             System.out.println("请输入SQL指令。支持分行，以;结束。");
             Scanner scan = new Scanner(System.in);
-            Master.Client master = ThriftClient.getForMaster("127.0.0.1", 9090);
+            Master.Client master = ThriftClient.getForMaster(Config.ip, Config.port);
             StringBuilder rawCmd;
             do {
                 rawCmd = new StringBuilder();

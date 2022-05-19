@@ -32,7 +32,7 @@
      rpcPort: 9046      # 本机用于处理 Thrift 连接的端口
      socketPort: 9047   # 本机用于处理 Socket 连接的端口
    zookeeper:
-     ip: 192.168.115.25 # ZooKeeper 服务器 IP
+     ip: 192.168.115.30 # ZooKeeper 服务器 IP
      port: 2181         # ZooKeeper 服务器端口
    ```
 
@@ -40,6 +40,15 @@
 
 ### 运行 Region  Server
 
-1. 参考上节内容，修改配置文件中的字段。
-2. 
+1. 参考上节内容，修改配置文件中的字段。注意，如果是在同一物理机上运行 master 或 region server，端口不能重复。
+2. 确保 `src/main/java/region/db/DMSDB.java` 中 `storageSpace` 的值为已存在的路径。
+3. 运行 `java.region.Region.main()` 方法。
 
+### 运行 Java 客户端
+
+1. 修改 `src/main/java/client/client.java` 中 `Config` 类下的 `ip` 和 `port` 为 master 机器的地址。
+2. 运行 `java.client.client.main()` 方法。
+
+### 运行 Python 客户端
+
+参考 `dms-python-client/README.md`。

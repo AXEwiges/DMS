@@ -10,8 +10,8 @@ cluster:
 network:
   ip: 127.0.0.1
   timeOut: 3000
-  rpcPort: 9092
-  socketPort: 9093
+  rpcPort: 9094
+  socketPort: 9095
 zookeeper:
   ip: 127.0.0.1
   port: 2181

@@ -63,5 +63,3 @@ Table person created
 Interpreter 使用 recursive descent parser，状态机如下图：
 
 ![状态机1](doc/state_1.jpg)
-
-![状态机2](doc/state_2.jpg)
