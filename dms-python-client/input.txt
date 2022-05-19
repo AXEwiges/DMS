@@ -1,0 +1,20 @@
+create table person(id int, name char(40) unique, height float, primary key(id));
+create index name_idx on person(name);
+insert into person values(
+  1,
+  'Alice Anderson',
+  170.5
+);
+insert into person values(
+  2,
+  'Bilbo Baggins',
+  120.5
+);
+
+select name, height from person where id>1;
+delete from person where id = 1;
+select * from person;
+
+drop index name_idx on person;
+drop table person;
+
